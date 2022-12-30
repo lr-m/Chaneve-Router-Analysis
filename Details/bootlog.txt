@@ -1,0 +1,344 @@
+CMD>reboot
+free previous mode:0,0
+0 entries flushed from NAT table
+0 entries flushed from NAT list
+wanstop2: mode=0,0
+CFG_commit: 0 update!
+dnsMasqstop
+dnsMasqstart
+interfaceGet(): bind socket successful on 192.168.188.1:53
+serverInit(): DNS Server List 0. 192.168.188.1:53
+
+
+
+U-Boot 1.1.3 (Mar 15 2017 - 15:14:56)
+
+
+Board: Ralink APSoC DRAM:   8 MB
+
+relocate_code Pointer at: 807b8000
+
+******************************
+
+Software System Reset Occurred
+
+******************************
+
+flash manufacture id: 5e, device id 40 16
+
+Warning: un-recognized chip ID, please update bootloader!
+
+*** Warning - bad CRC, using default environment
+
+
+============================================ 
+
+Ralink UBoot Version: 4.3.0.0
+
+-------------------------------------------- 
+
+ASIC 7628_MP (Port5<->None)
+
+DRAM component: 64 Mbits DDR, width 16
+
+DRAM bus: 16 bit
+
+Total memory: 8 MBytes
+
+Flash component: SPI Flash
+
+Date:Mar 15 2017  Time:15:14:56
+
+============================================ 
+
+icache: sets:512, ways:4, linesz:32 ,total:65536
+
+dcache: sets:256, ways:4, linesz:32 ,total:32768 
+
+
+ ##### The CPU freq = 575 MHZ #### 
+
+ estimate memory size =8 Mbytes
+
+RESET MT7628 PHY!!!!!!RESET MT7628 PHY LED!!!!!!
+
+Please choose the operation: 
+
+   1: Load system code to SDRAM via TFTP. 
+
+   2: Load system code then write to Flash via TFTP. 
+
+   3: Boot system code via Flash (default).
+
+   4: Entr boot command line interface.
+
+   6: Load Flash code then burn to Flash via TFTP. 
+
+   7: Load Boot Loader code then write to Flash via Serial. 
+
+   9: Load Boot Loader code then write to Flash via TFTP. 
+
+ 4  3  2  1  0 
+
+   
+
+3: System Boot system code via Flash.
+
+## Booting image at bc050000 ...
+
+   Image Name:   zxrouter
+
+   Image Type:   MIPS Linux Standalone Program (uncompressed)
+
+   Data Size:    906524 Bytes = 885.3 kB
+
+   Load Address: 80500000
+
+   Entry Point:  80500000
+
+   Verifying Checksum ... OK
+
+OK
+
+diag init
+
+attach irq vector = 5 isr =0x801ad698
+Init device '/dev/ttydiag'
+Init device '/dev/tty0'
+Init device '/dev/tty1'
+Init device '/dev/haldiag'
+Init device '/dev/ser0'
+ra305x SERIAL init - dev: b0000c00.26
+attach irq vector = 26 isr =0x800157b4
+\92nit device '/dev/ser1'
+ra305x SERIAL init - dev: b0000d00.27
+attach irq vector = 27 isr =0x800157b4
+Init device '/dev/ser2'
+ra305x SERIAL init - dev: b0000e00.28
+attach irq vector = 28 isr =0x800157b4
+[cyg_net_init] Init: mbinit(0x00000000)
+[cyg_net_init] Init: cyg_net_init_devs(0x00000000)
+Init device 'ra305x_eth0'
+ifra305x eth0: init pnde=80261958, sc=80238830, ifp=80238a84
+ifra305x: driver init
+ifra305x: init numtxd=128 txd-base=800 at a0270ca0
+ifra305x: init num_rxd=64 rxd_base=900 at a02714a0
+attach irq vector = 3 isr =0x800189f4
+attach irq vector = 23 isr =0x8001899c
+flash manufacture id: 5e, device id 40 16
+Warning: un-recognized chip ID, please update bootloader!
+CFG_load: flash offset=21a8, len=10d4
+cfg_parse: add cfg item=326 (4308 bytes)
+CFG_load: flash read 326 items(4308 bytes) into ram
+cfg_parse: null config!
+cfg_load_static: read-only 2 items(48 bytes) into ram
+CFG_load: total 328 items(4356 bytes)
+cfg_parse_wlan: parse 3043 bytes!
+Parsing WIFI configuration succeeds
+cfg_get_mac: id=0 : 1c:bf:ce:1c:b7:9a
+Init device 'ra305x_eth1'
+ifra305x eth1: init pnde=80261968, sc=80238944, ifp=80238acc
+cfg_get_mac: id=1 : 1c:bf:ce:1c:b7:9b
+Init device 'ra0'
+
+
+=== pAd = 0x802d5d78, size = 983488 ===
+
+<-- RTMPAllocTxRxRingMemory, Status=0, ErrorValue=0x
+<-- RTMPAllocAdapterBlock, Status=0
+rt_ecos_init:150
+RtmpChipOpsHook(536): Not support for HIF_MT yet!
+mt7628_init()-->
+mt7628_init(FW(8a00), HW(8a01), CHIPID(7628))
+e2.bin mt7628_init(1109)::(2), pChipCap->fw_len(63536)
+mt_bcn_buf_init(262): Not support for HIF_MT yet!
+<--mt7628_init()
+cfg_get_mac: id=2 : 1c:bf:ce:1c:b7:98
+attach irq vector = 4 isr =0x800cdfc0
+Init device 'ra1'
+Init device 'ra2'
+Init device 'ra3'
+Init device 'ra4'
+Init device 'ra5'
+Init device 'ra6'
+Init device 'ra7'
+Init device 'apcli0'
+Init device 'wds0'
+Init device 'wds1'
+Init device 'wds2'
+Init device 'wds3'
+[cyg_net_init] Init: loopattach(0x00000000)
+[cyg_net_init] Init: ifinit(0x00000000)
+[cyg_net_init] Init: domaininit(0x00000000)
+[cyg_net_init] Init: cyg_net_add_domain(0x8025c988)
+New domain internet at 0x00000000
+IP Filter: v3.4.31 initialized.  Default = pass all, Logging = disabled
+[cyg_net_init] Init: cyg_net_add_domain(0x8025c640)
+New domain route at 0x00000000
+[cyg_net_init] Init: call_route_init(0x00000000)
+[cyg_net_init] Init: sysctl_register_all(0x00000000)
+[cyg_net_init] Done
+Tony Debug:Test Led set.
+
+[cpuload_init]:calibration=9235731Operation Mode: Gateway
+[ra305x_close]====>
+[ra305x_close]<====
+[ra305x_restart]====>
+ifra305x eth0: init pnde=80261958, sc=80238830, ifp=80238a84
+ifra305x: driver init
+ifra305x: init numtxd=128 txd-base=800 at a0270ca0
+ifra305x: init num_rxd=64 rxd_base=900 at a02714a0
+cfg_get_mac: id=0 : 1c:bf:ce:1c:b7:9a
+ifra305x eth1: init pnde=80261968, sc=80238944, ifp=80238acc
+cfg_get_mac: id=1 : 1c:bf:ce:1c:b7:9b
+ifra305x1: start
+[ra305x_restart]<====
+ifra305x0: start
+ifra305x0: start
+-----------------------------------------
+eth0: Get IP by manual
+IP address:192.168.188.1 
+MASK:255.255.255.0
+Broadcast:192.168.188.255
+Gateway:255.255.255.255
+Server:0.0.0.0
+mtu:0
+Domain Name:
+-----------------------------------------
+interface eth0 init_net successed!
+[DOT1X] Dot1x_Reboot
+[DOT1X] DOT1X_Stop
+[DOT1X] 1x daemon not running interfaces.rtapd == NULL
+TX_BCN DESC 0xa028b190 size = 320
+RX[0] DESC 0xa028b990 size = 1024
+RX[1] DESC 0xa028bd90 size = 1024
+===>RtmpNetTaskInit
+<===RtmpNetTaskInit
+cfg_mode=9
+cfg_mode=9
+wmode_band_equal(): Band Equal!
+AndesSendCmdMsg: Could not send in band command due to diable fRTMP_ADAPTER_MCU_SEND_IN_BAND_CMD
+APSDCapable[0]=0
+APSDCapable[1]=0
+APSDCapable[2]=0
+APSDCapable[3]=0
+APSDCapable[4]=0
+APSDCapable[5]=0
+APSDCapable[6]=0
+APSDCapable[7]=0
+APSDCapable[8]=0
+APSDCapable[9]=0
+APSDCapable[10]=0
+APSDCapable[11]=0
+APSDCapable[12]=0
+APSDCapable[13]=0
+APSDCapable[14]=0
+APSDCapable[15]=0
+default ApCliAPSDCapable[0]=0
+Key1Str is Invalid key length(5) or Type(0)
+Key2Str is Invalid key length(5) or Type(0)
+Key3Str is Invalid key length(5) or Type(0)
+Key4Str is Invalid key length(5) or Type(0)
+RTMPReadParametersHook->first wifi
+load fw image from fw_header_image
+AndesMTLoadFwMethod1(2189)::pChipCap->fw_len(63536)
+FW Version:_e2_mp\00\00\00\00
+FW Build Date:20150625211422\00
+CmdAddressLenReq:(ret = 0)
+CmdFwStartReq: override = 1, address = 1048576
+CmdStartDLRsp: WiFI FW Download Success
+MtAsicDMASchedulerInit(): DMA Scheduler Mode=0(LMAC)
+RtmpChipOpsEepromHook::e2p_type=0, inf_Type=4
+RtmpEepromGetDefault::e2p_dafault=2
+RtmpChipOpsEepromHook: E2P type(2), E2pAccessMode = 2, E2P default = 2
+NVM is FLASH mode
+1. Phy Mode = 14
+Country Region from e2p = ffff
+tssi_1_target_pwr_g_band = 24
+2. Phy Mode = 14
+3. Phy Mode = 14
+NICInitPwrPinCfg(11): Not support for HIF_MT yet!
+NICInitializeAsic(599): Not support rtmp_mac_sys_reset () for HIF_MT yet!
+mt_mac_init()-->
+MtAsicInitMac()-->
+mt7628_init_mac_cr()-->
+MtAsicSetMacMaxLen(1210): Set the Max RxPktLen=1024!
+<--mt_mac_init()
+	WTBL Segment 1 info:
+		MemBaseAddr/FID:0x28000/0
+		EntrySize/Cnt:32/128
+	WTBL Segment 2 info:
+		MemBaseAddr/FID:0x40000/0
+		EntrySize/Cnt:64/128
+	WTBL Segment 3 info:
+		MemBaseAddr/FID:0x42000/64
+		EntrySize/Cnt:64/128
+	WTBL Segment 4 info:
+		MemBaseAddr/FID:0x44000/128
+		EntrySize/Cnt:32/128
+AntCfgInit(2537): Not support for HIF_MT yet!
+MCS Set = ff ff 00 00 01
+MtAsicSetChBusyStat(819): Not support for HIF_MT yet!
+SYNC - BBP R4 to 20MHz.l
+SYNC - BBP R4 to 20MHz.l
+CmdSlotTimeSet:(ret = 0)
+SYNC - BBP R4 to 20MHz.l
+SYNC - BBP R4 to 20MHz.l
+SYNC - BBP R4 to 20MHz.l
+SYNC - BBP R4 to 20MHz.l
+SYNC - BBP R4 to 20MHz.l
+SYNC - BBP R4 to 20MHz.l
+MtAsicSetRalinkBurstMode(2852): Not support for HIF_MT yet!
+MtAsicSetPiggyBack(754): Not support for HIF_MT yet!
+reload DPD from flash , 0x9F = [c600] doReload bit7[0]
+CmdLoadDPDDataFromFlash: Channel = 1, DoReload = 0
+MtAsicSetTxPreamble(2831): Not support for HIF_MT yet!
+MtAsicAddSharedKeyEntry(1277): Not support for HIF_MT yet!
+MtAsicSetPreTbtt(): bss_idx=0, PreTBTT timeout = 0xf0
+Main bssid = 1c:bf:ce:1c:b7:98
+<==== rt28xx_init, Status=0
+@@@ ed_monitor_exit : ===>
+@@@ ed_monitor_exit : <===
+mt7628_set_ed_cca: TURN OFF EDCCA  mac 0x10618 = 0xd7083f0f
+WiFi Startup Cost (ra0): 3.420s
+==>Set_Debug_Proc()
+<==Set_Debug_Proc(RTDebugLevel = 1)
+BRIDGE 020214 loaded
+eth0: promiscuous mode enabled
+ra0: promiscuous mode enabled
+-----------------------------------------
+Bridge Id: 1
+  eth0: if_flags=0xffff8943 bdg_flags=0x5
+  ra0: if_flags=0xffff8943 bdg_flags=0x5
+(max cache: 128, timeout: 300)
+-----------------------------------------
+[Dbg]=========DHCPD_init=========
+dhcpd_cmd=====1
+CFG_commit: 0 update!
+DNS_daemon
+dnsMasqstart
+interfaceGet(): bind socket successful on 192.168.188.1:53
+serverInit(): DNS Server List 0. 192.168.188.1:53
+[00000628][SYS] Ver 2.1.2.121  Mon Jan 15 15:10:01 2018
+CMD>[DOT1X] Dot1x_Reboot
+[DOT1X] DOT1X_Stop
+[DOT1X] 1x daemon not running interfaces.rtapd == NULL
+[DOT1X] ra0 is up ! 
+[DOT1X] AuthMode=7, IEEE8021X=0
+[DOT1X] Don't need trigger the 1x Daemon
+[UPNPD]Init UPNP
+[UPNPD]Bind IP:192.168.188.1, Port:1780 
+[UPNPD]Init SSDP
+[UPNPD]Init Gena
+[UPNPD]upnp_daemon Start, Adv_time=1800, Sub_time=1800
+[UPNPD]UPnP daemon is ready to run
+ra0:HW-Addr: 1c:bf:ce:1c:b7:98
+WscUPnPDevStart(2092): ASSERTION Error!
+Set pObj->WscMsgCallBack 0x80191994
+zweb_location:801f3185
+AP SETKEYS DONE - WPA2, AuthMode(7)=WPA2PSK, WepStatus(6)=AES, GroupWepStatus(6)=AES
+
+ls
+cfg         net         os          
+
+CMD>

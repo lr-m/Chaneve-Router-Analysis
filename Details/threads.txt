@@ -1,0 +1,33 @@
+=~=~=~=~=~=~=~=~=~=~=~= PuTTY log 2022.12.22 21:10:46 =~=~=~=~=~=~=~=~=~=~=~=
+Login as:root
+Password:******
+OS>ls
+thread      mem         spi         reg         cpuload     cpubusy     event       
+
+OS>thread
+id    state    Pri(Set) Name                      StackBase   Size   usage
+---------------------------------------------------------------------------
+0001  RUN      31 ( 31) Idle Thread               0x802b50d8  2048   1136  
+0002  EXIT     10 ( 10) main                      0x802b5f60  8192   3040  
+0003  SLEEP    6  ( 6 ) Network alarm support     0x80297378  4096   1840  
+0004  SLEEP    7  ( 7 ) Network support           0x80295f64  4096   2348  
+0005  SUSP     30 ( 30) cpuload                   0x80295680  2048   592   
+0006  SLEEP    8  ( 8 ) SYSLOG Daemon             0x8029a854  4096   1388  
+0007  SLEEP    4  ( 4 ) RtmpTimerTask             0x802da740  4096   936   
+0008  SLEEP    4  ( 4 ) RtmpCmdQTask              0x802d8438  4096   904   
+0009  SLEEP    4  ( 4 ) RtmpWscTask               0x80345f60  4096   304   
+0010  SLEEP    4  ( 4 ) RtmpMlmeTask              0x802d95e8  4096   1760  
+0011  SLEEP    8  ( 8 ) DHCP server               0x8029930c  5120   3972  
+0012  SLEEP    9  ( 9 ) DNS_daemon                0x802b342c  6144   2988  
+0013  SLEEP    15 ( 15) NTP Client                0x802b1110  8192   388   
+0014  SLEEP    8  ( 8 ) HTTPD_daemon              0x8026a794  4096   916   
+0015  SLEEP    8  ( 8 ) HTTPD_proc                0x8026b794  16384  5900  
+0016  RUN      8  ( 8 ) CLI_thread                0x80292ff0  8192   2688  
+0017  SLEEP    16 ( 16) upnp_main                 0x802cdafc  4096   1020  
+0018  SLEEP    5  ( 5 ) monitor_thread            0x802675a0  8192   756   
+0019  SLEEP    10 ( 10) extender_check            0x80262c80  14336  5592  
+0020  SLEEP    8  ( 8 ) upnp_daemon               0x802a9a5c  8192   820   
+0021  SLEEP    8  ( 8 ) wsc msg monitor thread    0x802aeebc  8192   236   
+0022  SLEEP    8  ( 8 ) wscNLEventHandle          0x802abf6c  8192   584   
+
+OS>

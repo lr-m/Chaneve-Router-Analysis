@@ -1,0 +1,452 @@
+Decimal ID  Hex ID      Name                          Value
+65792       10100       CFG_HDR                       1437217317
+16843264    1010200     SYS_ADMPASS                   admin
+16908544    1020100     SYS_DAYLITE                   0
+16974336    1030200     SYS_DOMAIN                    wodesys
+17039616    1040100     SYS_IDLET                     0
+17105408    1050200     SYS_NAME                      wodesys
+17170944    1060200     SYS_PASS                      
+17236224    1070100     SYS_RM_EN                     0
+17302272    1080300     SYS_RM_IP                     0.0.0.0
+17367296    1090100     SYS_RM_PORT                   8080
+17432832    10a0100     SYS_TZONE                     45
+17498624    10b0200     SYS_USERS                     admin
+17563904    10c0100     SYS_NTPTYPE                   0
+17629696    10d0200     SYS_NTPSRV                    pool.ntp.org*cn.pool.ntp.org*europe.pool.ntp.org
+17694976    10e0100     SYS_DAYLITE_SM                16
+17760512    10f0100     SYS_DAYLITE_SD                2
+17826048    1100100     SYS_DAYLITE_EM                2
+17891584    1110100     SYS_DAYLITE_ED                2
+17957376    1120200     SYS_WAN                       
+18022912    1130200     SYS_LAN                       
+18088192    1140100     SYS_OPMODE                    1
+18153728    1150100     SYS_TIME                      
+18284800    1170100     SYS_TZONE1                    
+18350336    1180100     SYS_LM                        1
+18416128    1190200     SYS_LANGUAGE_TYPE             en
+18481664    11a0200     SYS_MULTI_LANGUAGE            
+18546944    11b0100     SYS_AUTHSTATUS                1
+18612736    11c0200     SYS_CSID                      PLZ
+18678272    11d0200     SYS_STA_DOMAIN                esas.skeetertek.com
+18743808    11e0200     SYS_HWMODEL                   C745AR
+18809088    11f0100     SYS_CONFIG                    0
+33620480    2010200     LAN_DHCPD_DOMAIN              
+33685760    2020100     LAN_DHCPD_EN                  1
+33751808    2030300     LAN_DHCPD_END                 192.168.188.254
+33816832    2040100     LAN_DHCPD_LEASET              86400
+33882880    2050300     LAN_DHCPD_START               192.168.188.2
+34013952    2070300     LAN_GW                        
+34079488    2080300     LAN_IP                        192.168.188.1
+34145024    2090300     LAN_MSK                       255.255.255.0
+34210048    20a0100     LAN_IP_MODE                   1
+34275840    20b0200     LAN_DHCPD_SLEASE              
+34341376    20c0200     LAN_DHCPD_DLEASE              
+34406656    20d0100     LAN_DHCPD_PASS_WDN            
+34472192    20e0100     LAN_PHY                       0
+34537984    20f0200     LAN_GW_v6                     
+34603520    2100200     LAN_IP_v6                     
+34669056    2110200     LAN_MSK_v6                    
+34734336    2120100     LAN_DHCP_v6_EN                
+34800128    2130200     DHCPV6_START                  
+34865664    2140200     DHCPV6_END                    
+34930944    2150100     DHCPV6_VLIFE                  
+34996480    2160100     DHCPV6_PLIFE                  
+35062016    2170100     DHCPV6_SDUID                  
+35324160    21b0100     WAN_DHCP_v6_EN                
+35389696    21c0100     WAN_DHCPV6_CDUID              
+50397440    3010100     WAN_IP_MODE                   2
+50463488    3020300     WAN_IP                        0.0.0.0
+50529024    3030300     WAN_MSK                       0.0.0.0
+50594560    3040300     WAN_GW                        0.0.0.0
+50659584    3050100     WAN_IP_MANY                   0
+50725632    3060300     WAN_DNS                       
+50790912    3070200     WAN_DHCP_NAME                 
+50856960    3080400     WAN_DHCP_MAC                  
+50921728    3090100     WAN_DHCP_BPA_EN               
+50987776    30a0300     WAN_IP_MANY_IP                
+51053312    30b0300     WAN_IP_MANY_MSK               
+51118336    30c0100     WAN_DHCP_MAC_EN               0
+51184128    30d0200     WAN_DHCP_BPA_USER             
+51249664    30e0200     WAN_DHCP_BPA_PASS             
+51315200    30f0200     WAN_DHCP_BPA_SERV             
+51380992    3100300     WAN_DHCP_REQIP                
+51446016    3110100     WAN_MTU                       1500
+51511552    3120100     WAN_DHCP_MTU                  1500
+51577088    3130100     WAN_DNS_EN                    
+51643136    3140300     WAN_DNS_DEF                   
+51708160    3150100     WAN_DHCP_MAN                  0
+51773696    3160100     WAN_PHY                       
+51839488    3170200     WAN_IP_v6                     
+51905024    3180200     WAN_MSK_v6                    
+51970560    3190200     WAN_GW_v6                     
+52036096    31a0200     WAN_DNS_v6                    
+67175424    4010400     WLN_AP_MAC                    
+67240192    4020100     WLN_AP_MODE                   
+67306496    4030400     WLN_AP_PEER                   
+67371264    4040100     WLN_AUTH                      
+67436800    4050100     WLN_BasicRate                 15
+67502336    4060100     WLN_BeaconPeriod              100
+67567872    4070100     WLN_Channel                   1
+67634176    4080400     WLN_CLN_MAC                   
+67698944    4090100     WLN_DtimPeriod                1
+67764480    40a0100     WLN_FLT_ALLOW                 
+67830016    40b0100     WLN_FLT_EN                    
+67896320    40c0400     WLN_FLT_MAC                   
+67961088    40d0100     WLN_PKTSZ                     
+68026624    40e0100     WLN_PREAMP                    
+68092160    40f0100     WLN_RTSThreshold              2347
+68157952    4100200     WLN_SSID                      
+68223232    4110100     WLN_SSIDBCST                  
+68288768    4120100     WLN_TxPower                   100
+68354304    4130100     WLN_WEP_EN                    
+68420096    4140200     WLN_WEP_KEY                   
+68550912    4160100     WLN_WEP_KEYMODE               
+68616448    4170100     WLN_WEP_KEYSET                
+68682240    4180200     WLN_WEP_PASSPHASE             
+68747520    4190100     WLN_EN                        
+68813056    41a0100     WLN_DOMAIN                    
+68878592    41b0100     WLN_TxRate                    0
+68878848    41b0200     WLN_RADIUS_Server             0;0;0;0
+68944384    41c0200     WLN_RADIUS_Port               0;0;0;0
+69009920    41d0200     WLN_RADIUS_SECRETE            
+69075200    41e0100     WLN_WPA_REKEYTIME             
+69140736    41f0100     WLN_WPA_ENCRYTYPE             
+69206528    4200200     WLN_WPA_PASSPHASE             
+69271808    4210100     WLN_RATEMODE                  
+69337344    4220100     WLN_MODE                      9
+69402880    4230100     WLN_SECURITY_MODE             
+69468416    4240100     WLN_WPA_REKEYTYPE             
+69533952    4250100     WLN_BGProtection              0
+69599488    4260100     WLN_DISABLE_OLBC              
+69730560    4280100     WLN_PktAggregate              0
+69796096    4290100     WLN_TURBO                     
+69861632    42a0100     WLN_ShortSlot                 1
+69927424    42b0200     WLN_IEEE80211H                0;0;0;0
+69992704    42c0100     WLN_PREAUTH                   
+70058240    42d0100     WLN_NOFORWARD                 
+70123776    42e0100     WLN_ANTENNA                   1
+70189312    42f0100     WLN_SENS                      
+70320384    4310100     WLN_TxBurst                   1
+70451456    4330100     WLN_WirelessMode              9
+70517248    4340200     WLN_CountryCode               CN
+70582784    4350200     WLN_HideSSID                  0
+70648064    4360100     WLN_BssidNum                  1
+70713600    4370100     WLN_AutoChannelSelect         0
+70779136    4380100     WLN_WdsEnable                 0
+70844928    4390200     WLN_WdsEncrypType             NONE;NONE;NONE;NONE
+70910464    43a0200     WLN_DefaultKeyID              1;1;1;1
+70976000    43b0200     WLN_WdsKey                    
+71041536    43c0200     WLN_SSID1                     wifi_1CB798
+71303424    4400100     WLN_HT_OpMode                 0
+71368960    4410100     WLN_HT_BW                     1
+71434496    4420100     WLN_HT_GI                     1
+71500032    4430100     WLN_HT_MCS                    33
+71565568    4440100     WLN_HT_HTC                    0
+71631104    4450100     WLN_HT_RDG                    1
+71696640    4460100     WLN_HT_LinkAdapt              0
+71762176    4470100     WLN_HT_EXTCHA                 1
+71827712    4480100     WLN_HT_AMSDU                  0
+71893504    4490200     WLN_EncrypType                AES;NONE;NONE;NONE
+71959040    44a0200     WLN_WdsPhyMode                CCK;CCK;CCK;CCK
+72024576    44b0200     WLN_ModuleName                wodesysAP
+72089856    44c0100     WLN_HT_STBC                   0
+72155392    44d0100     WLN_HT_DisallowTKIP           1
+72220928    44e0100     WLN_HT_40MHZ_INTOLERANT       0
+72286464    44f0100     WLN_HT_RxStream               2
+72352000    4500100     WLN_HT_TxStream               2
+72417536    4510100     WLN_WiFiTest                  0
+72483328    4520200     WLN_FragThreshold             2346
+72548864    4530200     WLN_TxPreamble                0
+72614400    4540200     WLN_WmmCapable                0
+72679936    4550200     WLN_APSDCapable               0
+72745472    4560200     WLN_DLSCapable                0
+72811008    4570200     WLN_APAifsn                   3;7;1;1
+72876544    4580200     WLN_APCwmin                   4;4;3;2
+72942080    4590200     WLN_APCwmax                   6;10;4;3
+73007616    45a0200     WLN_APTxop                    0;0;94;47
+73073152    45b0200     WLN_APACM                     0;0;0;0
+73138688    45c0200     WLN_BSSAifsn                  3;7;2;2
+73204224    45d0200     WLN_BSSCwmin                  4;4;3;2
+73269760    45e0200     WLN_BSSCwmax                  10;10;4;3
+73335296    45f0200     WLN_BSSTxop                   0;0;94;47
+73400832    4600200     WLN_BSSACM                    0;0;0;0
+73466368    4610200     WLN_AckPolicy                 0;0;0;0
+73531904    4620200     WLN_HT_AutoBA                 1
+73597440    4630200     WLN_HT_MpduDensity            5
+73662976    4640200     WLN_HT_BAWinSize              64
+73728512    4650200     WLN_HT_BADecline              0
+73794048    4660200     WLN_NintendoCapable           
+73859584    4670200     WLN_RADIUS_Key                
+73925120    4680200     WLN_session_timeout_interval  0
+73990656    4690200     WLN_idle_timeout_interval     0
+74055936    46a0100     WLN_AccessPolicy0             0
+74121472    46b0100     WLN_AccessPolicy1             0
+74187008    46c0100     WLN_AccessPolicy2             0
+74252544    46d0100     WLN_AccessPolicy3             0
+74318336    46e0200     WLN_wanConnectionMode         BRIDGE
+74383872    46f0200     WLN_WapiEnable                0
+74449152    4700100     WLN_WscModeOption             2
+74514688    4710100     WLN_WscConfigured             1
+74580224    4720100     WLN_WscPinCode                0
+74646016    4730200     WLN_WdsList                   
+74711552    4740200     WLN_Wds1Key                   
+74777088    4750200     WLN_Wds2Key                   
+74842624    4760200     WLN_Wds3Key                   
+74908160    4770200     WLN_Wds4Key                   
+74973696    4780200     WLN_WdsDefaultKeyID           1;1;1;1
+75038976    4790100     WLN_CountryRegion             5
+75104512    47a0100     WLN_CountryRegionABand        1
+75170048    47b0100     WLN_DisableOLBC               0
+75235584    47c0100     WLN_TxAntenna                 0
+75301120    47d0100     WLN_RxAntenna                 0
+75366656    47e0100     WLN_TurboRate                 0
+75432448    47f0200     WLN_NoForwarding              0;0;0;0
+75497728    4800100     WLN_NoForwardingBTNBSSID      0
+75563520    4810200     WLN_SecurityMode              3
+75628800    4820100     WLN_VLANEnable                0
+75694592    4830200     WLN_VLANName                  
+75759872    4840100     WLN_VLANID                    0
+75825408    4850100     WLN_VLANPriority              0
+75890944    4860100     WLN_WscConfMode               6
+75956480    4870100     WLN_WscConfStatus             2
+76022016    4880100     WLN_WscAKMP                   1
+76087552    4890100     WLN_WscActionIndex            9
+76153088    48a0100     WLN_WscRegResult              1
+76218624    48b0100     WLN_WscUseUPnP                1
+76284160    48c0100     WLN_WscUseUFD                 0
+76349952    48d0200     WLN_WscSSID                   wodesysAP
+76415488    48e0200     WLN_WscKeyMGMT                WPA-EAP
+76480768    48f0100     WLN_WscConfigMethod           138
+76546304    4900100     WLN_WscAuthType               32
+76611840    4910100     WLN_WscEncrypType             8
+76677632    4920200     WLN_WscNewKey                 helloworld
+76743168    4930200     WLN_IEEE8021X                 0;0;0;0
+76808448    4940100     WLN_CSPeriod                  6
+76874240    4950200     WLN_PreAuth                   0;0;0;0
+76939776    4960200     WLN_AuthMode                  WPA2PSK;NONE;NONE;NONE
+77005312    4970200     WLN_RekeyInterval             3600;3600;3600;3600
+77070848    4980200     WLN_RekeyMethod               DISABLE;DISABLE;DISABLE;DISABLE
+77136384    4990200     WLN_PMKCachePeriod            10;10;10;10
+77201920    49a0200     WLN_WPAPSK1                   helloworld
+77267456    49b0200     WLN_Key1Type                  0;0;0;0
+77332992    49c0200     WLN_Key1Str1                  11111
+77398528    49d0200     WLN_Key2Type                  0;0;0;0
+77464064    49e0200     WLN_Key2Str1                  11111
+77529600    49f0200     WLN_Key3Type                  0;0;0;0
+77595136    4a00200     WLN_Key3Str1                  11111
+77660672    4a10200     WLN_Key4Type                  0;0;0;0
+77726208    4a20200     WLN_Key4Str1                  11111
+77791488    4a30100     WLN_HSCounter                 0
+77857024    4a40100     WLN_HT_PROTECT                1
+77922560    4a50100     WLN_HT_MIMOPS                 3
+77988352    4a60200     WLN_AccessControlList0        
+78053888    4a70200     WLN_AccessControlList1        
+78119424    4a80200     WLN_AccessControlList2        
+78184960    4a90200     WLN_AccessControlList3        
+78250240    4aa0100     WLN_WirelessEvent             0
+78316032    4ab0200     WLN_RADIUS_Acct_Server        0;0;0;0
+78381312    4ac0100     WLN_RADIUS_Acct_Port          1813
+78446848    4ad0100     WLN_RADIUS_Acct_Key           0
+78512384    4ae0100     WLN_staWirelessMode           9
+78577920    4af0100     WLN_upnpEnabled               0
+78643456    4b00100     WLN_pppoeREnabled             0
+78709248    4b10200     WLN_RDRegion                  JAP
+78774528    4b20100     WLN_NewVersion                0
+78840320    4b30200     WLN_SSID2                     
+78905856    4b40200     WLN_SSID3                     
+78971392    4b50200     WLN_SSID4                     
+79102464    4b70200     WLN_WPAPSK                    
+79168000    4b80200     WLN_WPAPSK2                   
+79233536    4b90200     WLN_WPAPSK3                   
+79299072    4ba0200     WLN_WPAPSK4                   
+79364608    4bb0200     WLN_Key1Str                   
+79430144    4bc0200     WLN_Key1Str2                  22222
+79495680    4bd0200     WLN_Key1Str3                  33333
+79561216    4be0200     WLN_Key1Str4                  44444
+79626752    4bf0200     WLN_Key2Str                   
+79692288    4c00200     WLN_Key2Str2                  22222
+79757824    4c10200     WLN_Key2Str3                  33333
+79823360    4c20200     WLN_Key2Str4                  44444
+79888896    4c30200     WLN_Key3Str                   
+79954432    4c40200     WLN_Key3Str2                  22222
+80019968    4c50200     WLN_Key3Str3                  33333
+80085504    4c60200     WLN_Key3Str4                  44444
+80151040    4c70200     WLN_Key4Str                   
+80216576    4c80200     WLN_Key4Str2                  22222
+80282112    4c90200     WLN_Key4Str3                  33333
+80347648    4ca0200     WLN_Key4Str4                  44444
+80412928    4cb0100     WLN_WapiPskType               
+80478720    4cc0200     WLN_WapiPsk1                  
+80544256    4cd0200     WLN_WapiPsk2                  
+80609792    4ce0200     WLN_WapiPsk3                  
+80675328    4cf0200     WLN_WapiPsk4                  
+80740864    4d00200     WLN_RADIUS_Key1               12345
+80806400    4d10200     WLN_RADIUS_Key2               12345
+80871936    4d20200     WLN_RADIUS_Key3               12345
+80937472    4d30200     WLN_RADIUS_Key4               12345
+81002752    4d40100     WLN_ApCliEnable               0
+81068544    4d50200     WLN_ApCliBssid                
+81134080    4d60200     WLN_ApCliAuthMode             
+81199616    4d70200     WLN_ApCliEncrypType           
+81264896    4d80100     WLN_ApCliKey1Type             0
+81330688    4d90200     WLN_ApCliKey1Str              
+81396224    4da0200     WLN_ApCliKey2Str              
+81461760    4db0200     WLN_ApCliKey3Str              
+81527296    4dc0200     WLN_ApCliKey4Str              
+81592576    4dd0100     WLN_ApCliDefaultKeyID         0
+81658368    4de0200     WLN_ApCliWPAPSK               
+81723904    4df0200     WLN_ApCliSsid                 wifi_client
+81789184    4e00100     WLN_SSIDNum                   
+81854976    4e10200     WLN_WapiKeyType               
+81920512    4e20200     WLN_WapiKey                   
+81986048    4e30200     WLN_AccessPolicy              
+82051328    4e40100     WLN_HT_BSSCoexistence         1
+82117120    4e50200     WLN_WepKeyLen                 0;0;0;0
+82182656    4e60200     WLN_KeyType                   
+82247936    4e70100     WLN_RadioOn                   1
+82313472    4e80100     WLN_IgmpSnEnable              0
+82379008    4e90100     WLN_SSIDIndex                 0
+82444544    4ea0100     WLN_ApCliKey2Type             0
+82510080    4eb0100     WLN_ApCliKey3Type             0
+82575616    4ec0100     WLN_ApCliKey4Type             0
+82641152    4ed0100     WLN_PMFMFPC                   0
+82706688    4ee0100     WLN_PMFMFPR                   0
+82772224    4ef0100     WLN_PMFSHA256                 0
+82837760    4f00100     WLN_MACRepeaterEn             0
+82903296    4f10100     WLN_MACRepeaterOuiMode        0
+83165440    4f50100     WLN_AutoChannelSkipList       14
+83230976    4f60100     WLN_ApCliLed                  5
+83296512    4f70100     WLN_WPS_START                 1
+83362048    4f80100     WLN_WPS_END                   3
+83427584    4f90100     WLN_RESET_START               3
+83493120    4fa0100     WLN_RESET_END                 5
+83952128    5010200     RT_ENTRY                      
+100729088   6010100     DDNS_EN                       0
+101188096   6080200     DDNS_SET                      
+101253888   6090300     DDNS_IP                       
+117506304   7010100     POE_AUTO                      0
+117571840   7020100     POE_IDLET                     300
+117637376   7030100     POE_MTU                       1492
+117703168   7040200     POE_PASS                      
+117768704   7050200     POE_SVC                       
+117834240   7060200     POE_USER                      
+117899776   7070200     POE_AC                        
+117965056   7080100     POE_ST                        
+118030592   7090100     POE_ET                        
+118096128   70a0100     POE_SEID                      
+118161664   70b0100     POE_SIPE                      0
+118227712   70c0300     POE_SIP                       0.0.0.0
+118292736   70d0100     POE_EN                        1
+118358272   70e0100     POE_DFLRT                     1
+118423808   70f0100     POE_PASSWDALG                 
+118489344   7100100     POE_PA_MODE                   
+118554880   7110100     POE_WANIF                     
+118555392   7110300     L2T_DNS                       
+118620928   7120300     POE_IP                        
+118686464   7130300     POE_MSK                       
+118752000   7140300     POE_GW                        
+118817536   7150300     POE_DNS                       
+134283520   8010100     PTP_AUTO                      1
+134349312   8020200     PTP_HOST                      pptp_host
+134414848   8030200     PTP_ID                        5
+134480128   8040100     PTP_IDLET                     300
+134546176   8050300     PTP_IP                        0.0.0.0
+134611712   8060300     PTP_MSK                       255.255.255.0
+134676736   8070100     PTP_MTU                       1400
+134742528   8080200     PTP_PASS                      pass
+134808320   8090300     PTP_SVR                       0.0.0.0
+134873600   80a0200     PTP_USER                      pptp_user
+134939136   80b0200     PTP_SVRDM                     
+135004416   80c0100     PTP_SVRD_SEL                  0
+135069952   80d0100     PTP_WANIF                     0
+135136256   80e0400     PTP_CLONE_MAC                 00:00:00:00:00:00
+135201024   80f0100     PTP_DHCP_MAC_EN               0
+135266560   8100100     PTP_MPPE_EN                   1
+135332608   8110300     PTP_GW                        0.0.0.0
+151060736   9010100     NAT_DMZ_EN                    0
+151126528   9020200     NAT_DMZ_HOST                  
+151192064   9030200     NAT_PMAP                      
+151257600   9040200     NAT_PTRG                      
+151323136   9050200     NAT_VTS                       
+151388416   9060100     NAT_ALG_FTP                   1
+151453952   9070100     NAT_ALG_NM                    0
+151519488   9080100     NAT_ALG_PPTP                  1
+151585024   9090100     NAT_ALG_MSN                   0
+151650560   90a0100     NAT_ALG_IPSEC                 1
+151716096   90b0100     NAT_EN                        1
+151781632   90c0100     NAT_ALG_FTP_NSP               0
+151847168   90d0100     NAT_ALG_BATTLEN               
+151913472   90e0400     NAT_SDMZ_MAC                  
+151978240   90f0100     NAT_ALG_L2TP                  1
+152044032   9100200     NAT_SCHED                     
+152109312   9110100     NAT_ALG_RTSP                  1
+152174848   9120100     NAT_ALG_RTSP_NSP              
+152240384   9130100     NAT_ALG_SIP                   1
+167837952   a010100     FW_FLT_CLN_EN                 1
+167903744   a020200     FW_FLT_CLN                    
+167969024   a030100     FW_FLT_MAC_EN                 0
+168034816   a040200     FW_FLT_MAC                    
+168100096   a050100     FW_FLT_MAC_MODE               0
+168165632   a060100     FW_FLT_URL_EN                 0
+168231424   a070200     FW_FLT_URL                    
+168296704   a080100     FW_FRAG_OK                    1
+168362240   a090100     FW_HACKER_ATT                 1
+168427776   a0a0100     FW_ICMP_RESP                  1
+168493312   a0b0100     FW_IDENT_DIS                  1
+168558848   a0c0100     FW_NBIOS_DROP                 0
+168624384   a0d0100     FW_PING_DIS_LAN               0
+168689920   a0e0100     FW_PING_DIS_WAN               0
+168755456   a0f0100     FW_PSCAN_DROP                 1
+169017600   a130100     FW_IP_SPOOF                   1
+169083136   a140100     FW_SHORT                      1
+169148672   a150100     FW_PING_DEATH                 1
+169214208   a160100     FW_LAND                       1
+169279744   a170100     FW_SNORK                      1
+169345280   a180100     FW_UDP_PLOOP                  1
+169410816   a190100     FW_TCP_NULL                   1
+169476352   a1a0100     FW_SMURF                      1
+169541888   a1b0100     FW_SYN_FLOOD                  1
+169607424   a1c0100     FW_SYNF_RATE                  150
+169672960   a1d0100     FW_EN                         1
+169738496   a1e0100     FW_MSN_DIS                    
+169804032   a1f0100     FW_QQ_DIS                     
+169869824   a200200     FW_FLT_PKT                    
+169935104   a210100     FW_FLT_DN_MODE                
+170000896   a220200     FW_FLT_DNB                    
+170066432   a230200     FW_FLT_DNA                    
+184615168   b010100     UPP_AD_TIME                   1800
+184680704   b020100     UPP_EN                        1
+184746240   b030100     UPP_PORT                      1780
+184811776   b040100     UPP_SUB_TIMEOUT               1800
+201392384   c010100     LOG_RM_EN                     0
+201457920   c020100     LOG_RM_TYPE                   0
+201523968   c030300     LOG_SYS_IP                    0.0.0.0
+201589248   c040200     LOG_MAIL_IP                   0.0.0.0
+201654784   c050200     LOG_E_MAIL                    
+201720064   c060100     LOG_MODE                      5
+218169600   d010100     L2T_AUTO                      1
+218366208   d040100     L2T_IDLET                     300
+218432256   d050300     L2T_IP                        0.0.0.0
+218497792   d060300     L2T_MSK                       255.255.255.0
+218562816   d070100     L2T_MTU                       1400
+218628608   d080200     L2T_PASS                      pass
+218694400   d090300     L2T_SVR                       0.0.0.0
+218759680   d0a0200     L2T_USER                      l2tp_user
+218825216   d0b0200     L2T_SVRDM                     
+218890496   d0c0100     L2T_SVRD_SEL                  0
+218956032   d0d0100     L2T_WANIF                     0
+219022336   d0e0400     L2T_CLONE_MAC                 00:00:00:00:00:00
+219087104   d0f0100     L2T_DHCP_MAC_EN               0
+219153152   d100300     L2T_GW                        0.0.0.0
+234946816   e010100     DNS_EN                        1
+235012864   e020300     DNS_SVR                       
+235077888   e030100     DNS_FIX                       0
+235143936   e040300     DNS_DEF                       0.0.0.0
+235208960   e050100     DNS_FIX_FIRST                 
+235274752   e060200     DNS_HOSTS                     
+251724032   f010100     QOS_EN                        1
+251789824   f020200     QOS_IPTABLE                   
+536936704   20010100    SOC_WDG                       
+553648384   21000100    CFG_CS                        427033
+553714432   21010300    STS_FMW_VER                   2.1.2.121
+553779712   21020200    STS_FMW_INFO                  Mon Jan 15 15:10:01 2018
