@@ -55,4 +55,32 @@ I added a simple substring search that allows you to easily find config values, 
 
 The script can be used to send HTTP payloads to the router, it uses the /do_cmd.htm endpoint to execute commands on the device (see blog for possible commands).
 
-`python .\wodesys.py http -p admin_pwd 'CMD=SYS_LOG'
+`python .\wodesys.py http -p admin_pwd 'CMD=SYS_LOG'`
+
+## Crashes
+
+These demonstrate the crashes on the router caused by various bugs
+
+`python ./wodesys.py http -c admin_pwd type` where type is an integer from 1-9
+
+- 1: WLN_SSID1 config stack overflow (requires power cycle to work)
+- 2: RT_ADD config stack overflow
+- 3: HTTP null pointer dereference 1
+- 4: HTTP null pointer dereference 2
+- 5: UPnP M-SEARCH stack overflow (uuid:)
+- 6: UPnP M-SEARCH stack overflow (urn:schemas-upnp-org:service:)
+- 7: UPnP M-SEARCH stack overflow (urn:schemas-upnp-org:device:)
+- 8: UPnP M-SEARCH stack overflow (urn:schemas-wifialliance-org:service:)
+- 9: UPnP M-SEARCH stack overflow (urn:schemas-wifialliance-org:device:)
+
+## ROP
+
+`python ./wodesys.py http -r type` where type is an integer from 1-5
+
+These exploit the UPnP M-SEARCH (uuid:) stack overflow to get the router to do interesting things using a simple ROP chain:
+- 1: Prints a firmware string to the UART
+- 2: Sends 'hello' to IP on the network via TCP (not working atm)
+- 3: Sends 'hello' to IP on the network via UDP
+- 4: Gets the admin password from the console and prints to UART
+- 5: Gets admin password and sends it to device on the network via UDP
+
