@@ -3,7 +3,7 @@ These are the tools created from my analysis of a cheap router utilising the mt7
 
 ## Telnet
 
-python .\wodesys.py telnet -h
+`python .\wodesys.py telnet -h`
 
 ### Scanning for Config Values
 
