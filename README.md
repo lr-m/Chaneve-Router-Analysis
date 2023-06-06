@@ -1,5 +1,11 @@
 # Chaneve-Router-Analysis
-These are the tools created from my analysis of a cheap router utilising the mt7628 router on a chip. I'd highly recommend reading my blog if you think these tools are relevant to something you are investigating.
+These are the tools created from my analysis of a cheap router utilising the mt7628 router on a chip. I'd highly recommend reading [my blog](https://luke-r-m.github.io/vr/analysing-a-dirt-cheap-router/) if you think these tools are relevant to something you are investigating.
+
+<p align="center">
+
+  <img src="https://github.com/luke-r-m/Chaneve-Router-Analysis/assets/47477832/58732de8-1e3d-4645-a586-c635e196fec9" width="400">
+
+</p>
 
 ## Telnet
 
