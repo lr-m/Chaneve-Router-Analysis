@@ -82,5 +82,15 @@ These exploit the UPnP M-SEARCH (uuid:) stack overflow to get the router to do i
 - 2: Sends 'hello' to IP on the network via TCP (not working atm)
 - 3: Sends 'hello' to IP on the network via UDP
 - 4: Gets the admin password from the console and prints to UART
-- 5: Gets admin password and sends it to device on the network via UDP
+- 5: Gets admin password and sends it to device on the network via UDP (port 4900)
+- r: Uses hexdump function to dump large area of memory (will need a restart after use)
+- w: Uses single gadget to write memory on the router
+- nc: Proof that the buffer can be overflowed without causing a crash
 
+## Shellcode
+
+`python ./wodesys.py http -s type` where type is 1 or 2
+
+These exploit the UPnP M-SEARCH (uuid:) stack overflow to get the router to do interesting things without crashing by injecting shellcode:
+- 1: Print 'hello' to debug interfaces
+- 2: Gets admin password and sends it to device on the network via UDP (port 4900)
