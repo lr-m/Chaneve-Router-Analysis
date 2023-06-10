@@ -85,10 +85,9 @@ These demonstrate the crashes on the router caused by various bugs
 
 These exploit the UPnP M-SEARCH (uuid:) stack overflow to get the router to do interesting things using a simple ROP chain:
 - 1: Prints a firmware string to the UART
-- 2: Sends 'hello' to IP on the network via TCP (not working atm)
-- 3: Sends 'hello' to IP on the network via UDP
-- 4: Gets the admin password from the console and prints to UART
-- 5: Gets admin password and sends it to device on the network via UDP (port 4900)
+- 2: Sends 'hello' to IP on the network via UDP
+- 3: Gets the admin password from the console and prints to UART
+- 4: Gets admin password and sends it to device on the network via UDP (port 4900)
 - r: Uses hexdump function to dump large area of memory (will need a restart after use)
 - w: Uses single gadget to write memory on the router
 - nc: Proof that the buffer can be overflowed without causing a crash
