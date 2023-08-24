@@ -402,6 +402,9 @@ int PayloadEntry()
 
     // Now we are in the game
     while(1){
+        next_card_index = 0;
+        shuffle(deck, 52);
+       
         // Print intro to round
         for (int i = 0; i < player_count; i++){
             sprintf(buffer, "\n\nAs it stands:\n");
@@ -723,12 +726,12 @@ int PayloadEntry()
                 }
             }
         }
-    }
 
-    for (int i = 0; i < player_count; i++){
-        sprintf(buffer, "\nOnto the next round!\n", players[i].current_bet);
-        send(players[i].socket, buffer, strlen(buffer), 0);
+        for (int i = 0; i < player_count; i++){
+           sprintf(buffer, "\nOnto the next round!\n", players[i].current_bet);
+           send(players[i].socket, buffer, strlen(buffer), 0);
+        }
     }
-    
+   
     return 0;
 }
