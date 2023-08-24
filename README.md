@@ -99,3 +99,4 @@ These exploit the UPnP M-SEARCH (uuid:) stack overflow to get the router to do i
 These exploit the UPnP M-SEARCH (uuid:) stack overflow to get the router to do interesting things without crashing by injecting shellcode:
 - 1: Print 'hello' to debug interfaces
 - 2: Gets admin password and sends it to device on the network via UDP (port 4900)
+- 3: Creates a task that acts as a blackjack dealer, players can connect with netcat (`netcat 192.168.188.1 1337`)
