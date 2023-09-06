@@ -4,8 +4,10 @@ typedef short uint16_t;
 typedef char uint8_t;
 
 #define MAX_PLAYERS 8
-
-#define min(x, y)(((x) < (y)) ? (x) : (y))
+#define BLACKJACK 21
+#define DEALER_TWIST_UNTIL 17
+#define CARDS_IN_SUITE 13
+#define BASE_FUNDS 250
 
 int PayloadEntry();
 
@@ -18,30 +20,50 @@ const char scores[] = {
   1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 10, 10, 10
 };
 
-const char *cards_structures[] = {
-    " _______\n|A _ _  |\n| ( v ) |\n|  \\ /  |\n|   .   |\n|______V|\n", // Hearts
-    " _______\n|A  ^   |\n|  / \\  |\n|  \\ /  |\n|   .   |\n|______V|\n", // Diamonds
-    " _______\n|A  _   |\n|  ( )  |\n| (_'_) |\n|   |   |\n|______V|\n", // Clubs
-    " _______\n|A  .   |\n|  /.\\  |\n| (_._) |\n|   |   |\n|______V|\n" // Spades
+// const char *cards_structures[] = {
+//     " _______\n|A _ _  |\n| ( v ) |\n|  \\ /  |\n|   .   |\n|______V|\n", // Hearts
+//     " _______\n|A  ^   |\n|  / \\  |\n|  \\ /  |\n|   .   |\n|______V|\n", // Diamonds
+//     " _______\n|A  _   |\n|  ( )  |\n| (_'_) |\n|   |   |\n|______V|\n", // Clubs
+//     " _______\n|A  .   |\n|  /.\\  |\n| (_._) |\n|   |   |\n|______V|\n" // Spades
+// };
+
+const char *heart_structure[] = {
+    " _______ ", "|A _ _  |", "| ( v ) |", "|  \\ /  |", "|   .   |", "|______V|", // Hearts
 };
 
-// For the players, each has a hand
+const char *diamond_structure[] = {
+    " _______ ", "|A  ^   |", "|  / \\  |", "|  \\ /  |", "|   .   |", "|______V|", // Diamonds
+};
+
+const char *club_structure[] = {
+    " _______ ", "|A  _   |", "|  ( )  |", "| (_'_) |", "|   |   |", "|______V|", // Clubs
+};
+
+const char *spade_structure[] = {
+    " _______ ", "|A  .   |", "|  /.\\  |", "| (_._) |", "|   |   |", "|______V|" // Spades
+};
+
+// Struct for storing the player/dealer hand
+typedef struct {
+    uint8_t cards[16];
+    uint8_t card_count;
+} Hand;
+
+// For the players
 typedef struct {
     int socket; // Socket the player is using to talk to the game
-    uint32_t hand[5]; // The players hand, all visible to other players
+    Hand hand;
     uint32_t current_bet; // The bet the player has placed in the current game
     uint32_t funds; // Money remaining in players balance
-    uint32_t card_count;
-    uint32_t bust;
-    uint32_t score;
-    uint32_t broke;
+    uint8_t score;
+    uint8_t bust;
+    uint8_t broke;
+    uint8_t blackjack;
 } Player;
 
 // For the dealer
 typedef struct {
-    int socket;
-    uint32_t card_count;
-    uint32_t hand[5]; // The cards the dealer picks up once all players have played
+    Hand hand;
 } Dealer;
 
 struct sockaddr {
@@ -137,16 +159,65 @@ do { \
 } while(0)
 
 // Creates a card ascii-art and places into provided buffer
-void createCard(char *buffer, int number, int suite) {
-    sprintf(buffer, "%s", cards_structures[suite]);
-    if (number == 9){
-        buffer[10] = values[number][0];
-        buffer[11] = values[number][1];
-        buffer[55] = values[number][0];
-        buffer[56] = values[number][1];
-    } else {
-        buffer[10] = values[number][0];
-        buffer[56] = values[number][0];
+// void createSingleCard(char *buffer, int number, int suite) {
+//     sprintf(buffer, "%s", cards_structures[suite]);
+//     if (number == 9){
+//         buffer[10] = values[number][0];
+//         buffer[11] = values[number][1];
+//         buffer[55] = values[number][0];
+//         buffer[56] = values[number][1];
+//     } else {
+//         buffer[10] = values[number][0];
+//         buffer[56] = values[number][0];
+//     }
+// }
+
+// Creates multiple cards on the same line (rather than above/below eachother), sends line by line instead of filling a buffer and returning like single card
+void createMultipleCardsAndSend(char* buffer, uint8_t* card_indexes, int number_of_cards, int socket){
+    // send it 1 line at a time
+    for (uint32_t line_no = 0; line_no < 6; line_no++){ // 6 is the number of lines in the card structure
+        for (uint32_t card_index = 0; card_index < number_of_cards; card_index++){
+            uint32_t number = card_indexes[card_index] % CARDS_IN_SUITE;
+            uint32_t suite = (uint32_t) ((card_indexes[card_index] - number) / CARDS_IN_SUITE);
+        
+            // Construct the line
+            switch (suite){
+                case 0:
+                    sprintf(&buffer[card_index * 10], "%s ", heart_structure[line_no]);
+                    break;
+                case 1:
+                    sprintf(&buffer[card_index * 10], "%s ", diamond_structure[line_no]);
+                    break;
+                case 2:
+                    sprintf(&buffer[card_index * 10], "%s ", club_structure[line_no]);
+                    break;
+                case 3:
+                    sprintf(&buffer[card_index * 10], "%s ", spade_structure[line_no]);
+                    break;
+            }
+            
+            if (line_no == 1){
+                if (number == 9){
+                    buffer[(card_index * 10) + 1] = values[number][0];
+                    buffer[(card_index * 10) + 2] = values[number][1];
+                } else {
+                    buffer[(card_index * 10) + 1] = values[number][0];
+                }
+            } else if (line_no == 5){
+                if (number == 9){
+                    buffer[(card_index * 10) + 6] = values[number][0];
+                    buffer[(card_index * 10) + 7] = values[number][1];
+                } else {
+                    buffer[(card_index * 10) + 7] = values[number][0];
+                }
+            }
+        }
+
+        // Send to the socket
+        uint32_t bufflen = strlen(buffer);
+        buffer[bufflen] = '\n'; // add newline to end of line
+        buffer[bufflen + 1] = 0; // null terminate
+        send(socket, buffer, strlen(buffer), 0);
     }
 }
 
@@ -199,62 +270,25 @@ int isIntegerAtStart(char *str) {
     return 1;
 }
 
-// Gets minimum score to check for bust
-int getMinimumPlayerTotal(Player player) {
-    int total = 0;
-    for (int i = 0; i < player.card_count; i++) {
-        total += scores[player.hand[i] % 13];
-    }
-    return total;
-}
-
 // Calculates the score for the dealers hand
-uint32_t calculateScoreDealer(Dealer dealer){
-    uint32_t ace = 0;
+uint32_t calculateScore(Hand hand){
+    uint8_t ace = 0;
     uint32_t total = 0;
 
     // Count the value of the dealers cards
-    for (int i = 0; i < dealer.card_count; i++){
-        uint32_t number = dealer.hand[i] % 13;
+    for (uint32_t i = 0; i < hand.card_count; i++){
+        uint32_t number = hand.cards[i] % CARDS_IN_SUITE;
 
         // If ace and first ace, indicate ace exists, after this aces count as 1
         if ((number == 0) && (ace == 0)){
             ace++;
-        } else {
-            total += scores[number];
+            continue;
         }
+        total += scores[number];
     }
 
     // With cards totalled, add aces
-    if ((ace == 1) && ((total + 11) <= 21)){
-        return total + 11;
-    } else if (ace){
-        return total + 1;
-    }
-
-    // If no aces return the total
-    return total;
-}
-
-// Calculates the score for the players hand
-uint32_t calculateScorePlayer(Player player){
-    uint32_t ace = 0;
-    uint32_t total = 0;
-
-    // Count the value of the dealers cards
-    for (int i = 0; i < player.card_count; i++){
-        uint32_t number = player.hand[i] % 13;
-
-        // If ace and first ace, indicate ace exists, after this aces count as 1
-        if ((number == 0) && (ace == 0)){
-            ace++;
-        } else {
-            total += scores[number];
-        }
-    }
-
-    // With cards totalled, add aces
-    if ((ace == 1) && ((total + 11) <= 21)){
+    if ((ace == 1) && ((total + 11) <= BLACKJACK)){
         return total + 11;
     } else if (ace){
         return total + 1;
@@ -294,33 +328,51 @@ unsigned long strtoul(const char *nptr, int base) {
     return result;
 }
 
+// Sends the contents of the null terminated buffer to all connected players
+void sendToAllPlayers(char* buffer, Player* players, uint32_t player_count){
+    for (uint32_t i = 0; i < player_count; i++)
+        send(players[i].socket, buffer, strlen(buffer), 0);
+}
+
+// Picks a card, saves the value, calculates number and suite from card index in sorted deck to params
+void pickCard(uint32_t* suite, uint32_t* number, uint32_t* next_card, uint32_t* deck, uint32_t index){
+    *next_card = deck[index];
+    *number = *next_card % CARDS_IN_SUITE;
+    *suite = (uint32_t) ((*next_card - *number) / CARDS_IN_SUITE);
+}
+
 // The entry point from Init.S
-// (yes I know this function is HUGE and needs to be split up, I'm too tired rn)
 int PayloadEntry()
-{   
+{
     Player players[MAX_PLAYERS];
     Dealer dealer;
-    int player_count = 0;
-    int next_card_index = 0;
+    uint32_t player_count = 0;
+    uint32_t next_card_index = 0;
 
-    int server_socket, client_socket; // fds for client/server sockets
+    uint32_t server_socket; // fds for client/server sockets
     uint32_t serv_addr[4]; // sockaddr for server
     uint32_t client_addr[4]; // sockaddr for client
 
     char buffer[256];
 
+    uint32_t round = 1;
+
     // Construct the deck and shuffle it
     uint32_t deck[52];
-    for (int i = 0; i < 52; i++)
+    uint32_t number;
+    uint32_t suite;
+    uint32_t next_card;
+    for (uint32_t i = 0; i < 52; i++)
         deck[i] = i;
 
     // Create UDP socket
     server_socket = socket(2, 1, 0);
 
-    sleep(50); // Need this sleep to let other threads run - stupid watchdog
+     // Need this sleep to let other threads run - stupid watchdog
+     sleep(50);
 
     // Manually construct the serv_addr struct in the memory
-    for (int i = 0; i < 0x4; i++)
+    for (uint32_t i = 0; i < 0x4; i++)
         serv_addr[i] = 0;
     serv_addr[0] = 0x39050220;
 
@@ -339,15 +391,16 @@ int PayloadEntry()
         if ((player_count == 0) || (player_count < expected_player_count)) {
             // Store client socket and player-specific data
             players[player_count].socket = client_socket;
-            players[player_count].funds = 100;
+            players[player_count].funds = BASE_FUNDS;
             players[player_count].broke = 0;
+            players[player_count].blackjack = 0;
 
-            sprintf(buffer, "\n   ___  __         __     _          __  \n  / _ )/ /__ _____/ /__  (_)__ _____/ /__\n / _  / / _ `/ __/  '_/ / / _ `/ __/  '_/\n/____/_/\\_,_/\\__/_/\\_\\_/ /\\_,_/\\__/_/\\_\\ \n                    |___/\n\n");
+            sprintf(buffer, "\n   ___  __         __     _          __\n  / _ )/ /__ _____/ /__  (_)__ _____/ /__\n / _  / / _ `/ __/  '_/ / / _ `/ __/  '_/\n/____/_/\\_,_/\\__/_/\\_\\_/ /\\_,_/\\__/_/\\_\\ \n                    |___/\n\n");
             send(client_socket, buffer, strlen(buffer), 0);
 
             // Say hello to connected client
             if (player_count == 0){
-                sprintf(buffer, "Welcome player %d!\nEnter player count (including yourself)\n", player_count + 1);
+                sprintf(buffer, "Welcome player %d!\nEnter player count (including yourself)\n> ", player_count + 1);
                 send(client_socket, buffer, strlen(buffer), 0);
 
                 // First player needs to specify how many other players will be joining the game
@@ -387,9 +440,7 @@ int PayloadEntry()
 
             if (player_count == expected_player_count){
                 sprintf(buffer, "Game starting!\n");
-                for (int i = 0; i < expected_player_count; i++){
-                    send(players[i].socket, buffer, strlen(buffer), 0);
-                }
+                sendToAllPlayers(buffer, players, player_count);
                 break;
             }
         } else {
@@ -402,196 +453,177 @@ int PayloadEntry()
 
     // Now we are in the game
     while(1){
-        next_card_index = 0;
         shuffle(deck, 52);
-       
+        next_card_index = 0;
+        
         // Print intro to round
-        for (int i = 0; i < player_count; i++){
-            sprintf(buffer, "\n\nAs it stands:\n");
-            send(players[i].socket, buffer, strlen(buffer), 0);
-        }
+        sprintf(buffer, "\n\nAs it stands:\n");
+        sendToAllPlayers(buffer, players, player_count);
 
         // Send all funds to all other players
-        for (int i = 0; i < player_count; i++){
-            for (int j = 0; j < player_count; j++){
-                sprintf(buffer, "- Player %d has $%d\n", i+1, players[i].funds);
-                send(players[j].socket, buffer, strlen(buffer), 0);
-            }
+        for (uint32_t i = 0; i < player_count; i++){
+            sprintf(buffer, "- Player %d has $%d\n", i + 1, players[i].funds);
+            sendToAllPlayers(buffer, players, player_count);
         }
 
         // Make sure all players are not bust anymore and clear cards
-        for (int i = 0; i < player_count; i++){
+        for (uint32_t i = 0; i < player_count; i++){
             players[i].bust = 0;
-            players[i].card_count = 0;
+            players[i].hand.card_count = 0;
             players[i].score = 0;
+            players[i].blackjack = 0;
         }
-        dealer.card_count = 0;
+        dealer.hand.card_count = 0;
 
         // First, each player places their bet
-        for (int i = 0; i < player_count; i++){ // Player requesting from
+        for (uint32_t i = 0; i < player_count; i++){ // Player requesting from
             // Skip broke players go
-            if (players[i].broke == 1){
+            if (players[i].broke == 1)
                 continue;
-            }
 
             // Notify other players
-            for (int j = 0; j < player_count; j++){
+            for (uint32_t j = 0; j < player_count; j++){
                 if (j == i){
                     // This is the player that is placing the bet
-                    sprintf(buffer, "\nPlace your bet player %d...\n> ", i+1);
+                    sprintf(buffer, "\nPlace your bet player %d...\n> ", i + 1);
                 } else {
                     // This is the other players
-                    sprintf(buffer, "\nPlayer %d is placing their bet\n", i+1);
+                    sprintf(buffer, "\nPlayer %d is placing their bet\n", i + 1);
                 }
                 send(players[j].socket, buffer, strlen(buffer), 0);
             }
 
             while (1) {
                 uint32_t recv_result = recv(players[i].socket, buffer, sizeof(buffer), 0);
-                if (recv_result <= 0) {
-                    // Client disconnected or an error occurred, close the socket
-                    close(client_socket);
+                buffer[recv_result] = '\0';
+                if (isIntegerAtStart(buffer) == 1){
+                    uint32_t bet = strtoul(buffer, 10);
+                    if (bet > players[i].funds)
+                        bet = players[i].funds;
+
+                    players[i].current_bet = bet;
+                    sprintf(buffer, "Player %d has bet $%d\n", i + 1, players[i].current_bet);
+                    sendToAllPlayers(buffer, players, player_count);
                     break;
-                } else {
-                    buffer[recv_result] = '\0';
-                    if (isIntegerAtStart(buffer) == 1){
-                        uint32_t bet = strtoul(buffer, 10);
-                        if (bet > players[i].funds){
-                            bet = players[i].funds;
-                        }
-                        players[i].current_bet = bet;
-                        for (int k = 0; k < player_count; k++){
-                            sprintf(buffer, "Player %d has bet $%d\n", i + 1, players[i].current_bet);
-                            send(players[k].socket, buffer, strlen(buffer), 0);
-                        }
-                        break;
-                    }
                 }
             }
-
         }
 
         // Now each player gets 2 cards
-        for (int i = 0; i < player_count; i++){ // Player requesting from
+        for (uint32_t i = 0; i < player_count; i++){ // Player requesting from
             // Skip broke players go
-            if (players[i].broke == 1){
+            if (players[i].broke == 1)
                 continue;
-            }
 
-            for (int j = 0; j < player_count; j++){
-                sprintf(buffer, "\nPlayer %d cards:\n", i + 1);
-                send(players[j].socket, buffer, strlen(buffer), 0);
-            }
+            sprintf(buffer, "\nPlayer %d cards:\n", i + 1);
+            sendToAllPlayers(buffer, players, player_count);
 
             // Get 2 random cards from deck for player
-            for (int j = 0; j < 2; j++){
-                uint32_t next_card = deck[next_card_index];
+            for (uint32_t j = 0; j < 2; j++){
+                pickCard(&suite, &number, &next_card, deck, next_card_index);
                 next_card_index++;
-                uint32_t number = next_card % 13;
-                uint32_t suite = (uint32_t) ((next_card - number) / 13);
-                
-                // Send the result to all the other players
-                for (int k = 0; k < player_count; k++){
-                    createCard(buffer, number, suite);
-                    send(players[k].socket, buffer, strlen(buffer), 0);
-                }
 
                 // Set the card in players hand
-                players[i].hand[j] = next_card;
+                players[i].hand.cards[j] = next_card;
             }
 
             // Set players card count now that they have 2
-            players[i].card_count = 2;
+            players[i].hand.card_count = 2;
+
+            for (int k = 0; k < player_count; k++)
+                createMultipleCardsAndSend(buffer, players[i].hand.cards, 2, players[k].socket);
+
+            // Check that the player doesn't have a blackjack
+            if (calculateScore(players[i].hand) == BLACKJACK){
+                // Player has a blackjack
+                players[i].blackjack = 1;
+
+                // Notify all other players
+                sprintf(buffer, "\nPlayer %d has blackjack!\n", i + 1);
+                sendToAllPlayers(buffer, players, player_count);
+            }
         }
 
         // Now get the dealers cards, 1 unhidden and 1 hidden
-        for (int k = 0; k < player_count; k++){
-            sprintf(buffer, "\nDealers card:\n");
-            send(players[k].socket, buffer, strlen(buffer), 0);
-        }
+        sprintf(buffer, "\nDealers card:\n");
+        sendToAllPlayers(buffer, players, player_count);
 
         // This is the unhidden one
-        uint32_t next_card = deck[next_card_index];
+        pickCard(&suite, &number, &next_card, deck, next_card_index);
         next_card_index++;
-        uint32_t number = next_card % 13;
-        uint32_t suite = (uint32_t) ((next_card - number) / 13);
         
         // Send the result to all the other players
-        for (int k = 0; k < player_count; k++){
-            createCard(buffer, number, suite);
-            send(players[k].socket, buffer, strlen(buffer), 0);
-        }
+        // createSingleCard(buffer, number, suite);
+        // sendToAllPlayers(buffer, players, player_count);
 
-        dealer.hand[0] = next_card;
-        dealer.card_count++;
+        dealer.hand.cards[0] = next_card;
+        dealer.hand.card_count++;
+
+        // Send the hidden card to everyone else
+        for (int k = 0; k < player_count; k++)
+            createMultipleCardsAndSend(buffer, dealer.hand.cards, dealer.hand.card_count, players[k].socket);
 
         // This is the hidden one
         next_card = deck[next_card_index];
         next_card_index++;
 
-        dealer.hand[1] = next_card;
-        dealer.card_count++;
+        dealer.hand.cards[1] = next_card;
+        dealer.hand.card_count++;
 
         // Now iterate over the players stick or twist
-        for (int i = 0; i < player_count; i++){
-            // Skip broke players go
-            if (players[i].broke == 1){
+        for (uint32_t i = 0; i < player_count; i++){
+            // Skip players that either have no funds, or already have blackjack
+            if ((players[i].broke == 1) || (players[i].blackjack == 1))
                 continue;
-            }
 
-            for (int j = 0; j < player_count; j++){
-                sprintf(buffer, "\nPlayer %d's move...\n", i + 1);
-                send(players[j].socket, buffer, strlen(buffer), 0);
-            }
+            // Notify other players whos move it is
+            sprintf(buffer, "\nPlayer %d's move, current hand:\n", i + 1);
+            sendToAllPlayers(buffer, players, player_count);
+
+            for (int k = 0; k < player_count; k++)
+                createMultipleCardsAndSend(buffer, players[i].hand.cards, players[i].hand.card_count, players[k].socket);
             
-            // Loop until stick or bust
+            // Loop until player sticks or player busts
             while (1) {
-                sprintf(buffer, "Stick or twist?\n> ");
+                sprintf(buffer, "\nStick or twist?\n> ");
                 send(players[i].socket, buffer, strlen(buffer), 0);
                 uint32_t recv_result = recv(players[i].socket, buffer, sizeof(buffer), 0);
                 if (recv_result > 0) {
                     buffer[recv_result] = 0x0;
                     if (*buffer == 's'){
-                        for (int j = 0; j < player_count; j++){
-                            sprintf(buffer, "\nPlayer %d chose to stick\n", i + 1);
-                            send(players[j].socket, buffer, strlen(buffer), 0);
-                            
-                        }
+                        // Stick
+                        sprintf(buffer, "\nPlayer %d chose to stick\n", i + 1);
+                        sendToAllPlayers(buffer, players, player_count);
                         
-                        players[i].score = calculateScorePlayer(players[i]);
-                        for (int j = 0; j < player_count; j++){
-                            sprintf(buffer, "\nPlayer %d final score: %d\n", i + 1, players[i].score);
-                            send(players[j].socket, buffer, strlen(buffer), 0);
-                        }
-                        // stick
+                        // Calculate final score and send to all players
+                        players[i].score = calculateScore(players[i].hand);
+                        sprintf(buffer, "\nPlayer %d final score: %d\n", i + 1, players[i].score);
+                        sendToAllPlayers(buffer, players, player_count);
                         break;
                     } else if (*buffer == 't'){
-                        // twist
-                        for (int j = 0; j < player_count; j++){
-                            sprintf(buffer, "\nPlayer %d chose to twist:\n", i + 1);
-                            send(players[j].socket, buffer, strlen(buffer), 0);
-                        }
-
+                        // Twist
                         // Get another card
-                        uint32_t next_card = deck[next_card_index];
+                        pickCard(&suite, &number, &next_card, deck, next_card_index);
                         next_card_index++;
-                        uint32_t number = next_card % 13;
-                        uint32_t suite = (uint32_t) ((next_card - number) / 13);
                         
                         // Send the result to all the other players
-                        for (int k = 0; k < player_count; k++){
-                            createCard(buffer, number, suite);
-                            send(players[k].socket, buffer, strlen(buffer), 0);
-                        }
+                        // createSingleCard(buffer, number, suite);
+                        // sendToAllPlayers(buffer, players, player_count);
 
-                        players[i].hand[players[i].card_count] = next_card;
-                        players[i].card_count++;
+                        players[i].hand.cards[players[i].hand.card_count] = next_card;
+                        players[i].hand.card_count++;
 
-                        if (getMinimumPlayerTotal(players[i]) > 21){
-                            for (int k = 0; k < player_count; k++){
-                                sprintf(buffer, "\nPlayer %d is bust!\n", i + 1);
-                                send(players[k].socket, buffer, strlen(buffer), 0);
-                            }
+                        sprintf(buffer, "\nPlayer %d's chose to twist, current hand:\n", i + 1);
+                        sendToAllPlayers(buffer, players, player_count);
+
+                        // Send updated hand to all players
+                        for (int k = 0; k < player_count; k++)
+                            createMultipleCardsAndSend(buffer, players[i].hand.cards, players[i].hand.card_count, players[k].socket);
+
+                        // Check that new card hasn't made player go bust
+                        if (calculateScore(players[i].hand) > BLACKJACK){
+                            sprintf(buffer, "\nPlayer %d is bust!\n", i + 1);
+                            sendToAllPlayers(buffer, players, player_count);
                             players[i].bust = 1;
                             break;
                         }
@@ -600,138 +632,118 @@ int PayloadEntry()
             }
         }
 
-        // Flip dealers card
-        for (int k = 0; k < player_count; k++){
-            sprintf(buffer, "\nAll players done...\n\nThe dealers hidden card is:\n");
-            send(players[k].socket, buffer, strlen(buffer), 0);
-        }
+        // Reveal hidden card in full hand
+        sprintf(buffer, "\nAll players done...\n\nThe dealers full hand is:\n");
+        sendToAllPlayers(buffer, players, player_count);
+        // Send updated hand to all players
+        for (int k = 0; k < player_count; k++)
+            createMultipleCardsAndSend(buffer, dealer.hand.cards, dealer.hand.card_count, players[k].socket);
 
-        number = dealer.hand[1] % 13;
-        suite = (uint32_t) ((dealer.hand[1] - number) / 13);
+        number = dealer.hand.cards[1] % CARDS_IN_SUITE;
+        suite = (uint32_t) ((dealer.hand.cards[1] - number) / CARDS_IN_SUITE);
         
         // Send the result to all the other players
-        for (int k = 0; k < player_count; k++){
-            createCard(buffer, number, suite);
-            send(players[k].socket, buffer, strlen(buffer), 0);
-        }
+        // createSingleCard(buffer, number, suite);
+        // sendToAllPlayers(buffer, players, player_count);
 
-        uint32_t dealer_score = calculateScoreDealer(dealer);;
-        for (int k = 0; k < player_count; k++){
-            sprintf(buffer, "\nDealers current score: %d\n", dealer_score);
-            send(players[k].socket, buffer, strlen(buffer), 0);
-        }
+        // Get the dealers current score and notify players
+        uint32_t dealer_score = calculateScore(dealer.hand);
+        // sprintf(buffer, "\nDealers current score: %d\n", dealer_score);
+        // sendToAllPlayers(buffer, players, player_count);
 
         // Now determine if the dealer needs another card
         // Dealer must keep taking cards until total is 17 or more
         // If dealer has an ace and counting it as 11 would bring the total to 17 or more (but not over 21), dealer must stand
         // If multiple aces, first ace counts as 11 unles it busts the hand, subsequent aces count as 1
-        uint32_t dealer_bust = 0;
-        
+        uint8_t dealer_bust = 0;
+
         while(1){
-            if (dealer_score < 17){
-                for (int k = 0; k < player_count; k++){
-                    sprintf(buffer, "Dealer is twisting\n");
-                    send(players[k].socket, buffer, strlen(buffer), 0);
-                }
+            if (dealer_score < DEALER_TWIST_UNTIL){
+                sprintf(buffer, "\nDealer is twisting\n");
+                sendToAllPlayers(buffer, players, player_count);
             } else {
-                for (int k = 0; k < player_count; k++){
-                    sprintf(buffer, "Dealer is sticking\n");
-                    send(players[k].socket, buffer, strlen(buffer), 0);
-                }
+                sprintf(buffer, "\nDealer is sticking\n");
+                sendToAllPlayers(buffer, players, player_count);
+
+                sprintf(buffer, "\nDealers final score: %d\n", dealer_score);
+                sendToAllPlayers(buffer, players, player_count);
+                
                 break;
             }
 
             // Take another card
             // This is the unhidden one
-            next_card = deck[next_card_index];
+            pickCard(&suite, &number, &next_card, deck, next_card_index);
             next_card_index++;
-            number = next_card % 13;
-            suite = (uint32_t) ((next_card - number) / 13);
             
-            // Send the result to all the other players
-            for (int k = 0; k < player_count; k++){
-                createCard(buffer, number, suite);
-                send(players[k].socket, buffer, strlen(buffer), 0);
-            }
+            // // Send the result to all the other players
+            // createSingleCard(buffer, number, suite);
+            // sendToAllPlayers(buffer, players, player_count);
 
-            dealer.hand[dealer.card_count] = next_card;
-            dealer.card_count++;
+            // Add to dealers hand
+            dealer.hand.cards[dealer.hand.card_count] = next_card;
+            dealer.hand.card_count++;
+
+            // Reveal hidden card in full hand
+            sprintf(buffer, "\nDealers current hand:\n");
+            sendToAllPlayers(buffer, players, player_count);
+            // Send updated hand to all players
+            for (int k = 0; k < player_count; k++)
+                createMultipleCardsAndSend(buffer, dealer.hand.cards, dealer.hand.card_count, players[k].socket);
 
             // Check if bust
-            dealer_score = calculateScoreDealer(dealer);
-            for (int k = 0; k < player_count; k++){
-                sprintf(buffer, "\nDealers current score: %d\n", dealer_score);
-                send(players[k].socket, buffer, strlen(buffer), 0);
-            }
+            dealer_score = calculateScore(dealer.hand);
+            // sprintf(buffer, "\nDealers current score: %d\n", dealer_score);
+            // sendToAllPlayers(buffer, players, player_count);
 
-            if (dealer_score > 21){
-                // Send the result to all the other players
-                for (int k = 0; k < player_count; k++){
-                    sprintf(buffer, "Dealer is bust!\n");
-                    send(players[k].socket, buffer, strlen(buffer), 0);
-                    dealer_bust = 1;
-                }
-            }
-
-            if (dealer_bust == 1){
+            // Check if dealer is bust
+            if (dealer_score > BLACKJACK){
+                sprintf(buffer, "Dealer is bust!\n");
+                sendToAllPlayers(buffer, players, player_count);
+                dealer_bust = 1;
                 break;
             }
         }
 
-        // If dealer busts, give each player that hasn't bust 2x their bet
-        if (dealer_bust == 1){
-            for (int i = 0; i < player_count; i++){
-                // Skip broke players go
-                if (players[i].broke == 1){
-                    continue;
-                }
+        // Iterate over players and distribute winnings
+        for (uint32_t i = 0; i < player_count; i++){
+            // Skip broke players
+            if (players[i].broke == 1)
+                continue;
 
-                if (players[i].bust == 0){
-                    sprintf(buffer, "\nYou won $%d!\n", players[i].current_bet);
-                    send(players[i].socket, buffer, strlen(buffer), 0);
-                    players[i].funds += players[i].current_bet;
-                } else {
-                    // Eliminate player if funds <= 0
-                    players[i].funds -= players[i].current_bet;
-                    if (players[i].funds == 0){
-                        players[i].broke = 1;
-                        sprintf(buffer, "\nYou've run out of funds!\n");
-                    } else {
-                        sprintf(buffer, "\nBetter luck next round!\n");
-                    }
-                    send(players[i].socket, buffer, strlen(buffer), 0);
-                }
+            // Handle blackjack
+            if (players[i].blackjack == 1){
+                sprintf(buffer, "\nYou won $%d!\n", players[i].current_bet/2);
+                send(players[i].socket, buffer, strlen(buffer), 0);
+                players[i].funds += players[i].current_bet / 2;
+                continue;
             }
-        } else {
-            for (int i = 0; i < player_count; i++){
-                // Skip broke players go
-                if (players[i].broke == 1){
-                    continue;
-                }
 
-                if (players[i].score > dealer_score){
-                    sprintf(buffer, "\nYou won $%d!\n", players[i].current_bet);
-                    send(players[i].socket, buffer, strlen(buffer), 0);
-                    players[i].funds += players[i].current_bet;
+            if (((dealer_bust == 1) && (players[i].bust == 0)) || ((dealer_bust == 0) && (players[i].score > dealer_score))) {
+                // If dealer bust and player not bust, they win
+                sprintf(buffer, "\nYou won $%d!\n", players[i].current_bet);
+                send(players[i].socket, buffer, strlen(buffer), 0);
+                players[i].funds += players[i].current_bet;
+            } else {
+                // Otherwise, player loses their bet (unless they had a blackjack earlier)
+                // Eliminate player if funds <= 0
+                players[i].funds -= players[i].current_bet;
+                if (players[i].funds == 0){
+                    players[i].broke = 1;
+                    sprintf(buffer, "\nYou've run out of funds!\n");
                 } else {
-                    // Eliminate player if funds <= 0
-                    players[i].funds -= players[i].current_bet;
-                    if (players[i].funds == 0){
-                        players[i].broke = 1;
-                        sprintf(buffer, "\nYou've run out of funds!\n");
-                    } else {
-                        sprintf(buffer, "\nBetter luck next round!\n");
-                    }
-                    send(players[i].socket, buffer, strlen(buffer), 0);
+                    sprintf(buffer, "\nBetter luck next round!\n");
                 }
+                send(players[i].socket, buffer, strlen(buffer), 0);
             }
         }
 
-        for (int i = 0; i < player_count; i++){
-           sprintf(buffer, "\nOnto the next round!\n", players[i].current_bet);
-           send(players[i].socket, buffer, strlen(buffer), 0);
-        }
+        // Indicate that the next round is starting
+        round++;
+        sleep(500);
+        sprintf(buffer, "\nRound %d!", round);
+        sendToAllPlayers(buffer, players, player_count);
     }
-   
+    
     return 0;
 }
