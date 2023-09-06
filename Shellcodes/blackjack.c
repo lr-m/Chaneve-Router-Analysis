@@ -20,13 +20,6 @@ const char scores[] = {
   1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 10, 10, 10
 };
 
-// const char *cards_structures[] = {
-//     " _______\n|A _ _  |\n| ( v ) |\n|  \\ /  |\n|   .   |\n|______V|\n", // Hearts
-//     " _______\n|A  ^   |\n|  / \\  |\n|  \\ /  |\n|   .   |\n|______V|\n", // Diamonds
-//     " _______\n|A  _   |\n|  ( )  |\n| (_'_) |\n|   |   |\n|______V|\n", // Clubs
-//     " _______\n|A  .   |\n|  /.\\  |\n| (_._) |\n|   |   |\n|______V|\n" // Spades
-// };
-
 const char *heart_structure[] = {
     " _______ ", "|A _ _  |", "| ( v ) |", "|  \\ /  |", "|   .   |", "|______V|", // Hearts
 };
@@ -157,20 +150,6 @@ do { \
     SleepFunc func = (SleepFunc)0x8019abac; \
     func(centiseconds); \
 } while(0)
-
-// Creates a card ascii-art and places into provided buffer
-// void createSingleCard(char *buffer, int number, int suite) {
-//     sprintf(buffer, "%s", cards_structures[suite]);
-//     if (number == 9){
-//         buffer[10] = values[number][0];
-//         buffer[11] = values[number][1];
-//         buffer[55] = values[number][0];
-//         buffer[56] = values[number][1];
-//     } else {
-//         buffer[10] = values[number][0];
-//         buffer[56] = values[number][0];
-//     }
-// }
 
 // Creates multiple cards on the same line (rather than above/below eachother), sends line by line instead of filling a buffer and returning like single card
 void createMultipleCardsAndSend(char* buffer, uint8_t* card_indexes, int number_of_cards, int socket){
@@ -551,10 +530,6 @@ int PayloadEntry()
         // This is the unhidden one
         pickCard(&suite, &number, &next_card, deck, next_card_index);
         next_card_index++;
-        
-        // Send the result to all the other players
-        // createSingleCard(buffer, number, suite);
-        // sendToAllPlayers(buffer, players, player_count);
 
         dealer.hand.cards[0] = next_card;
         dealer.hand.card_count++;
@@ -605,10 +580,6 @@ int PayloadEntry()
                         // Get another card
                         pickCard(&suite, &number, &next_card, deck, next_card_index);
                         next_card_index++;
-                        
-                        // Send the result to all the other players
-                        // createSingleCard(buffer, number, suite);
-                        // sendToAllPlayers(buffer, players, player_count);
 
                         players[i].hand.cards[players[i].hand.card_count] = next_card;
                         players[i].hand.card_count++;
@@ -641,15 +612,9 @@ int PayloadEntry()
 
         number = dealer.hand.cards[1] % CARDS_IN_SUITE;
         suite = (uint32_t) ((dealer.hand.cards[1] - number) / CARDS_IN_SUITE);
-        
-        // Send the result to all the other players
-        // createSingleCard(buffer, number, suite);
-        // sendToAllPlayers(buffer, players, player_count);
 
         // Get the dealers current score and notify players
         uint32_t dealer_score = calculateScore(dealer.hand);
-        // sprintf(buffer, "\nDealers current score: %d\n", dealer_score);
-        // sendToAllPlayers(buffer, players, player_count);
 
         // Now determine if the dealer needs another card
         // Dealer must keep taking cards until total is 17 or more
@@ -675,30 +640,25 @@ int PayloadEntry()
             // This is the unhidden one
             pickCard(&suite, &number, &next_card, deck, next_card_index);
             next_card_index++;
-            
-            // // Send the result to all the other players
-            // createSingleCard(buffer, number, suite);
-            // sendToAllPlayers(buffer, players, player_count);
 
             // Add to dealers hand
             dealer.hand.cards[dealer.hand.card_count] = next_card;
             dealer.hand.card_count++;
 
-            // Reveal hidden card in full hand
+            // Show current hand to all players
             sprintf(buffer, "\nDealers current hand:\n");
             sendToAllPlayers(buffer, players, player_count);
+
             // Send updated hand to all players
             for (int k = 0; k < player_count; k++)
                 createMultipleCardsAndSend(buffer, dealer.hand.cards, dealer.hand.card_count, players[k].socket);
 
             // Check if bust
             dealer_score = calculateScore(dealer.hand);
-            // sprintf(buffer, "\nDealers current score: %d\n", dealer_score);
-            // sendToAllPlayers(buffer, players, player_count);
 
             // Check if dealer is bust
             if (dealer_score > BLACKJACK){
-                sprintf(buffer, "Dealer is bust!\n");
+                sprintf(buffer, "\nDealer is bust!\n");
                 sendToAllPlayers(buffer, players, player_count);
                 dealer_bust = 1;
                 break;
