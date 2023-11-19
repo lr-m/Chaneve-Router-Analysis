@@ -7,6 +7,18 @@ These are the tools created from my analysis of a cheap router utilising the mt7
 
 </p>
 
+## Blogs
+
+[Analysing a Dirt-cheap Router [1] : Getting Started](https://luke-m.xyz/vr/analysing-a-dirt-cheap-router.md)
+
+[Analysing a Dirt-cheap Router [2] : Finding Bugs](https://luke-m.xyz/vr/analysing-a-dirt-cheap-router_part_2.md)
+
+[Analysing a Dirt-cheap Router [3] : MIPS Code Execution with ROP](https://luke-m.xyz/vr/analysing-a-dirt-cheap-router_part_3.md)
+
+[Analysing a Dirt-cheap Router [4]: Process Continuation + Shellcode](https://luke-m.xyz/vr/analysing-a-dirt-cheap-router_part_4.md)
+
+[Analysing a Dirt-cheap Router [5]: A Complex Payload](https://luke-m.xyz/vr/analysing-a-dirt-cheap-router_part_5.md)
+
 ## Telnet
 
 `python .\wodesys.py telnet -h`
